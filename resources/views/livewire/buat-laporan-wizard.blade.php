@@ -4,7 +4,7 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <a href="{{ route('home') }}" class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <div class="w-10 h-10 bg-primary-custom rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                         </svg>
@@ -41,7 +41,7 @@
                     <div class="grid gap-4">
                         <div>
                             <label class="text-sm text-gray-500 block mb-1">Nomor Registrasi</label>
-                            <div class="text-2xl font-bold text-blue-600">{{ $nomor_registrasi }}</div>
+                            <div class="text-2xl font-bold text-primary-custom">{{ $nomor_registrasi }}</div>
                         </div>
                         <div>
                             <label class="text-sm text-gray-500 block mb-1">Password Tracking</label>
@@ -111,7 +111,7 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="{{ route('cek-status') }}" class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+                    <a href="{{ route('cek-status') }}" class="btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
@@ -130,7 +130,7 @@
                         <button wire:click="goToStep({{ $i }})" 
                                 class="flex items-center justify-center w-10 h-10 rounded-full font-semibold transition
                                 {{ $i < $step ? 'bg-green-500 text-white' : '' }}
-                                {{ $i === $step ? 'bg-blue-600 text-white' : '' }}
+                                {{ $i === $step ? 'bg-primary-custom text-white' : '' }}
                                 {{ $i > $step ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'cursor-pointer' }}"
                                 @if($i > $step) disabled @endif>
                             @if($i < $step)
@@ -144,7 +144,7 @@
                     @endfor
                 </div>
                 <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-600 transition-all duration-300" style="width: {{ (($step - 1) / ($totalSteps - 1)) * 100 }}%"></div>
+                    <div class="h-full bg-primary-custom transition-all duration-300" style="width: {{ (($step - 1) / ($totalSteps - 1)) * 100 }}%"></div>
                 </div>
             </div>
             
@@ -442,7 +442,7 @@
                         @endif
                         
                         <button type="submit"
-                                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition"
+                                class="btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition"
                                 wire:loading.attr="disabled"
                                 wire:loading.class="opacity-75">
                             <span wire:loading.remove wire:target="{{ $step === $totalSteps ? 'submit' : 'nextStep' }}">

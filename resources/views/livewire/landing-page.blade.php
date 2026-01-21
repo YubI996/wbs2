@@ -111,7 +111,7 @@
             <div class="grid md:grid-cols-4 gap-6 max-w-5xl mx-auto">
                 <!-- Website Form - Primary -->
                 <a href="{{ route('buat-laporan') }}" 
-                   class="hover-lift bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-center text-white shadow-lg">
+                   class="hover-lift bg-gradient-custom-br rounded-2xl p-6 text-center text-white shadow-lg">
                     <div class="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
@@ -194,7 +194,7 @@
         </section>
         
         <!-- CTA Section -->
-        <section class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-12 text-center text-white">
+        <section class="bg-gradient-custom rounded-3xl p-12 text-center text-white">
             <h3 class="text-3xl font-bold mb-4">Siap Melaporkan?</h3>
             <p class="text-blue-100 mb-8 max-w-xl mx-auto">
                 Keberanian Anda untuk melaporkan dapat membantu menciptakan pemerintahan yang bersih dan transparan.
@@ -215,7 +215,7 @@
             <div class="grid md:grid-cols-3 gap-8 mb-8">
                 <div>
                     <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <div class="w-10 h-10 bg-primary-custom rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                             </svg>

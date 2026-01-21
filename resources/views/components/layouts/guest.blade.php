@@ -19,24 +19,45 @@
     
     <style>
         :root {
-            /* Soft Blue Palette - Professional & Calming */
-            --primary-50: #EBF5FF;   /* Lightest - backgrounds */
-            --primary-100: #DBEAFE;  /* Light - hover states */
-            --primary-200: #BFDBFE;  /* Medium light */
-            --primary-300: #93C5FD;  /* Medium - accents */
-            --primary-400: #60A5FA;  /* Main blue */
-            --primary-500: #3B82F6;  /* Primary */
-            --primary-600: #2563EB;  /* Darker - buttons */
-            --primary-700: #1D4ED8;  /* Darkest - headings */
+            /* Custom OKLCH Color Palette */
+            --color-primary: oklch(0.53 0.21 263.57);      /* from-blue-600 replacement */
+            --color-primary-light: oklch(0.77 0.1 230.91); /* to-blue-700 replacement */
+            --color-primary-hover: oklch(0.60 0.18 260);   /* hover state */
+            
+            /* Fallback colors for older browsers */
+            --color-primary-fallback: #2563EB;
+            --color-primary-light-fallback: #60A5FA;
         }
         
         body {
             font-family: 'Inter', sans-serif;
         }
         
-        /* Gradient dengan palette biru lembut */
+        /* Gradient dengan OKLCH colors */
         .gradient-primary {
-            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #1E40AF 100%);
+            background: linear-gradient(135deg, oklch(0.53 0.21 263.57) 0%, oklch(0.77 0.1 230.91) 100%);
+        }
+        
+        /* Custom gradient classes */
+        .bg-gradient-custom {
+            background: linear-gradient(to right, oklch(0.53 0.21 263.57), oklch(0.77 0.1 230.91));
+        }
+        
+        .bg-gradient-custom-br {
+            background: linear-gradient(to bottom right, oklch(0.53 0.21 263.57), oklch(0.77 0.1 230.91));
+        }
+        
+        /* Primary color utilities */
+        .bg-primary-custom {
+            background-color: oklch(0.53 0.21 263.57);
+        }
+        
+        .bg-primary-light-custom {
+            background-color: oklch(0.77 0.1 230.91);
+        }
+        
+        .text-primary-custom {
+            color: oklch(0.53 0.21 263.57);
         }
         
         .glass-card {
@@ -51,16 +72,16 @@
         
         .hover-lift:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(30, 64, 175, 0.2);
+            box-shadow: 0 20px 40px oklch(0.53 0.21 263.57 / 0.2);
         }
         
-        /* Custom button colors */
+        /* Custom button colors with OKLCH */
         .btn-primary {
-            background-color: #2563EB;
+            background-color: oklch(0.53 0.21 263.57);
             color: white;
         }
         .btn-primary:hover {
-            background-color: #3B82F6;
+            background-color: oklch(0.60 0.18 260);
         }
         
         /* Loading animation */
@@ -71,7 +92,7 @@
         /* Custom focus ring for accessibility */
         .focus-ring:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 0 3px oklch(0.53 0.21 263.57 / 0.4);
         }
     </style>
 </head>

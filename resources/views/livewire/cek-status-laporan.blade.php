@@ -4,7 +4,7 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <a href="{{ route('home') }}" class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <div class="w-10 h-10 bg-primary-custom rounded-lg flex items-center justify-center">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                         </svg>
@@ -15,7 +15,7 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('buat-laporan') }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                <a href="{{ route('buat-laporan') }}" class="btn-primary inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
@@ -30,7 +30,7 @@
             <!-- Result View -->
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <!-- Header -->
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+                <div class="bg-gradient-custom p-6 text-white">
                     <div class="flex items-center justify-between mb-4">
                         <h1 class="text-xl font-bold">{{ $aduan->nomor_registrasi }}</h1>
                         <button wire:click="resetSearch" class="text-blue-200 hover:text-white transition">
@@ -168,7 +168,7 @@
                     @endif
                     
                     <button type="submit"
-                            class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition"
+                            class="w-full btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition"
                             wire:loading.attr="disabled"
                             wire:loading.class="opacity-75">
                         <span wire:loading.remove wire:target="search">

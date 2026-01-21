@@ -1,0 +1,75 @@
+# Git
+.git
+.github
+.gitignore
+.gitattributes
+
+# Node modules (will be installed in Docker)
+node_modules
+
+# Vendor directory (will be installed in Docker)
+vendor
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Storage (will be mounted as volume)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/public/*
+
+# Bootstrap cache (will be mounted as volume)
+bootstrap/cache/*
+
+# Tests
+tests
+*.Test.php
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+
+# Documentation
+*.md
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+
+# IDE
+.idea
+.vscode
+.vs
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Editor config
+.editorconfig
+
+# Docker files (not needed in image)
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+.dockerignore
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+.circleci
+.claude
+
+# Laravel Mix / Vite (source files, not built assets)
+webpack.mix.js
+vite.config.js
+
+# Misc
+*.log
+.cache
+.temp
+tmp
+temp

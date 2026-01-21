@@ -29,6 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(\App\Filament\Pages\Auth\Login::class)
+            ->logoutRedirectUrl('/login')
             ->brandName('WBS Kota Bontang')
             ->brandLogo(null)
             ->favicon(null)

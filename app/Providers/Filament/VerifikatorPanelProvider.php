@@ -26,6 +26,7 @@ class VerifikatorPanelProvider extends PanelProvider
             ->id('verifikator')
             ->path('verifikator')
             ->login(\App\Filament\Pages\Auth\Login::class)
+            ->logoutRedirectUrl('/login')
             ->brandName('WBS - Verifikator')
             ->colors([
                 'primary' => Color::Teal,

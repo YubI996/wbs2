@@ -26,6 +26,7 @@ class InspekturPanelProvider extends PanelProvider
             ->id('inspektur')
             ->path('inspektur')
             ->login(\App\Filament\Pages\Auth\Login::class)
+            ->logoutRedirectUrl('/login')
             ->brandName('WBS - Inspektur')
             ->colors([
                 'primary' => Color::Amber,

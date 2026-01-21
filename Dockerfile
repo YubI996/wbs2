@@ -6,6 +6,10 @@
 # ============================================
 FROM composer:2 AS builder-composer
 
+# Install intl extension required by Filament
+RUN apk add --no-cache icu-dev \
+    && docker-php-ext-install intl
+
 WORKDIR /app
 
 # Copy composer files first for layer caching

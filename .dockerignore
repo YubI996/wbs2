@@ -63,9 +63,8 @@ Dockerfile
 .circleci
 .claude
 
-# Laravel Mix / Vite (source files, not built assets)
+# Laravel Mix (not used)
 webpack.mix.js
-vite.config.js
 
 # Misc
 *.log

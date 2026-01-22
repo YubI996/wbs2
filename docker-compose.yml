@@ -19,6 +19,9 @@ services:
       - APP_ENV=production
       - DB_HOST=wbs-mysql
       - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-wbs_v2}
+      - DB_USERNAME=${DB_USERNAME:-wbs_user}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_HOST=wbs-redis
       - REDIS_PORT=6379
     networks:
@@ -75,6 +78,9 @@ services:
       - APP_ENV=production
       - DB_HOST=wbs-mysql
       - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-wbs_v2}
+      - DB_USERNAME=${DB_USERNAME:-wbs_user}
+      - DB_PASSWORD=${DB_PASSWORD}
     networks:
       - wbs-network
     depends_on:

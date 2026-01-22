@@ -8,7 +8,7 @@ echo "==================================="
 # Wait for MySQL to be ready
 echo "Waiting for MySQL to be ready..."
 RETRIES=30
-until mysql -h"${DB_HOST}" -u"${DB_USERNAME}" -p"${DB_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
+until mysql -h"${DB_HOST}" -u"${DB_USERNAME}" -p"${DB_PASSWORD}" --skip-ssl -e "SELECT 1" >/dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
   echo "Waiting for MySQL server, $((RETRIES--)) remaining attempts..."
   sleep 2
 done

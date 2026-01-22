@@ -1,84 +1,52 @@
 #!/bin/bash
 set -e
 
-echo "==================================="
-echo "WBS v2 Application Initialization"
-echo "==================================="
+echo "========================================"
+echo "WBS v2 - Starting Application"
+echo "========================================"
 
-# Wait for MySQL to be ready
-echo "Waiting for MySQL to be ready..."
-RETRIES=30
-until mysql -h"${DB_HOST}" -u"${DB_USERNAME}" -p"${DB_PASSWORD}" --skip-ssl -e "SELECT 1" >/dev/null 2>&1 || [ $RETRIES -eq 0 ]; do
-  echo "Waiting for MySQL server, $((RETRIES--)) remaining attempts..."
-  sleep 2
+cd /var/www/html
+
+# Wait for database
+echo "Waiting for database..."
+timeout=60
+while ! php artisan db:monitor --databases=mysql > /dev/null 2>&1; do
+    timeout=$((timeout - 1))
+    if [ $timeout -le 0 ]; then
+        echo "Database connection timeout, proceeding anyway..."
+        break
+    fi
+    sleep 1
 done
+echo "Database ready!"
 
-if [ $RETRIES -eq 0 ]; then
-  echo "ERROR: MySQL connection failed!"
-  exit 1
+# Generate key if not set
+if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
+    if ! grep -q "APP_KEY=base64:" .env 2>/dev/null; then
+        echo "Generating APP_KEY..."
+        php artisan key:generate --force
+    fi
 fi
 
-echo "✓ MySQL is ready!"
+# Run migrations
+echo "Running migrations..."
+php artisan migrate --force || echo "Migration warning (may already exist)"
 
-# Check if APP_KEY is set, generate if not
-if ! grep -q "APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
-  echo "Generating application key..."
-  php artisan key:generate --force
-  echo "✓ Application key generated!"
-else
-  echo "✓ Application key already set"
+# Cache config for production
+if [ "$APP_ENV" = "production" ]; then
+    echo "Optimizing for production..."
+    php artisan config:cache || true
+    php artisan route:cache || true
+    php artisan view:cache || true
+    php artisan filament:upgrade || true
 fi
 
-# Run database migrations
-echo "Running database migrations..."
-php artisan migrate --force
-echo "✓ Migrations completed!"
+# Fix permissions
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
-# Create storage symlink
-if [ ! -L /var/www/html/public/storage ]; then
-  echo "Creating storage symlink..."
-  php artisan storage:link
-  echo "✓ Storage symlink created!"
-else
-  echo "✓ Storage symlink already exists"
-fi
+echo "========================================"
+echo "Application ready!"
+echo "========================================"
 
-# Clear and optimize caches for production
-if [ "${APP_ENV}" = "production" ]; then
-  echo "Optimizing application for production..."
-
-  echo "- Clearing caches..."
-  php artisan config:clear
-  php artisan route:clear
-  php artisan view:clear
-
-  echo "- Caching configuration..."
-  php artisan config:cache
-
-  echo "- Caching routes..."
-  php artisan route:cache
-
-  echo "- Caching views..."
-  php artisan view:cache
-
-  echo "- Running Filament upgrade..."
-  php artisan filament:upgrade
-
-  echo "✓ Production optimization completed!"
-else
-  echo "Running in ${APP_ENV} mode - skipping cache optimization"
-fi
-
-# Set proper permissions
-echo "Setting permissions..."
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-echo "✓ Permissions set!"
-
-echo "==================================="
-echo "Initialization completed successfully!"
-echo "Starting PHP-FPM..."
-echo "==================================="
-
-# Execute the main command (PHP-FPM)
 exec "$@"

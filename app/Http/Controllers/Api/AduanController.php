@@ -118,9 +118,8 @@ class AduanController extends Controller
                 'channel' => ReportChannel::SUPERAPPS, // From external API
             ]);
 
-            // Generate tracking password
-            $trackingPassword = $aduan->generateTrackingPassword();
-            $aduan->save();
+            // Tracking password sudah di-generate saat create via boot
+            $trackingPassword = $aduan->getPlainTrackingPassword();
 
             // Step 4: Handle file uploads with security validation
             $uploadedFiles = [];
@@ -201,6 +200,7 @@ class AduanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menyimpan aduan. Silakan coba lagi.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }

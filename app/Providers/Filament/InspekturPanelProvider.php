@@ -10,7 +10,9 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
+use Illuminate\Support\HtmlString;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -26,7 +28,6 @@ class InspekturPanelProvider extends PanelProvider
             ->id('inspektur')
             ->path('inspektur')
             ->login(\App\Filament\Pages\Auth\Login::class)
-            ->logoutRedirectUrl('/login')
             ->brandName('WBS - Inspektur')
             ->colors([
                 'primary' => Color::Amber,
@@ -56,6 +57,10 @@ class InspekturPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-            ->spa();
+            ->spa()
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => new HtmlString('<style>[x-cloak] { display: none !important; }</style>')
+            );
     }
 }

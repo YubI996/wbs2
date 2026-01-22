@@ -18,6 +18,9 @@
     @livewireStyles
     
     <style>
+        /* Prevent FOUC - hide elements until Alpine.js initializes */
+        [x-cloak] { display: none !important; }
+
         :root {
             /* Custom OKLCH Color Palette */
             --color-primary: oklch(0.53 0.21 263.57);      /* from-blue-600 replacement */

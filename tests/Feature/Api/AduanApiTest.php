@@ -99,6 +99,11 @@ class AduanApiTest extends TestCase
             'X-API-Key' => $this->apiKey,
         ]);
 
+        // Debug: lihat response sebenarnya
+        if ($response->status() !== 201) {
+            dump($response->status(), $response->getContent());
+        }
+
         $response->assertStatus(201)
             ->assertJson([
                 'success' => true,
@@ -193,6 +198,10 @@ class AduanApiTest extends TestCase
         ]);
 
         $createResponse->assertStatus(201);
+        
+        // Debug: pastikan tracking_password ada
+        $this->assertArrayHasKey('tracking_password', $createResponse->json('data'), 
+            'Response should contain tracking_password. Got: ' . json_encode($createResponse->json('data')));
 
         $nomorRegistrasi = $createResponse->json('data.nomor_registrasi');
         $trackingPassword = $createResponse->json('data.tracking_password');

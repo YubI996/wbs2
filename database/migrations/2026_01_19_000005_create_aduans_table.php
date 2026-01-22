@@ -56,7 +56,8 @@ return new class extends Migration
                 'website',
                 'whatsapp',
                 'instagram',
-                'sp4n'
+                'sp4n',
+                'superapps'
             ])->default('website');
             
             // Timestamps

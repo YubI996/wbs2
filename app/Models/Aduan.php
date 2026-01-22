@@ -56,6 +56,11 @@ class Aduan extends Model
     ];
 
     /**
+     * Temporary storage for plain tracking password (not persisted)
+     */
+    protected ?string $temporaryPlainPassword = null;
+    
+    /**
      * Boot the model
      */
     protected static function boot()
@@ -67,7 +72,23 @@ class Aduan extends Model
             if (!$aduan->nomor_registrasi) {
                 $aduan->generateNomorRegistrasi();
             }
+            
+            // Generate tracking password if not set
+            if (!$aduan->tracking_password) {
+                $plainPassword = Str::random(8);
+                $aduan->tracking_password = Hash::make($plainPassword);
+                // Store plain password temporarily (not as attribute!)
+                $aduan->temporaryPlainPassword = $plainPassword;
+            }
         });
+    }
+    
+    /**
+     * Get the temporary plain tracking password (only available right after creation)
+     */
+    public function getPlainTrackingPassword(): ?string
+    {
+        return $this->temporaryPlainPassword;
     }
 
     /**

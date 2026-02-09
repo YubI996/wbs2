@@ -41,6 +41,20 @@ Route::post('/logout', function () {
     return redirect()->route('home');
 })->name('logout')->middleware('auth');
 
+/*
+|--------------------------------------------------------------------------
+| CSRF Token Refresh Endpoint
+|--------------------------------------------------------------------------
+*/
+
+// Refresh CSRF token (replaces Sanctum endpoint if needed)
+Route::get('/csrf-token', function () {
+    return response()->json([
+        'token' => csrf_token(),
+        'timestamp' => now()->toIso8601String(),
+    ]);
+})->name('csrf-token.refresh')->middleware('web');
+
 // Redirect to appropriate panel after login (for direct panel access)
 Route::get('/dashboard', function () {
     $user = Auth::user();

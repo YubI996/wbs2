@@ -131,4 +131,40 @@
         });
     </script>
     @endif
+
+    @push('scripts')
+    <script>
+        // Prevent form submission until Livewire is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.querySelector('form[wire\\:submit="login"]');
+
+            if (loginForm) {
+                let livewireReady = false;
+
+                document.addEventListener('livewire:init', function() {
+                    livewireReady = true;
+                    console.log('[Login] Form ready for submission');
+                });
+
+                loginForm.addEventListener('submit', function(e) {
+                    if (!livewireReady) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.warn('[Login] Submission blocked - Livewire not ready');
+
+                        setTimeout(() => {
+                            if (livewireReady) {
+                                loginForm.requestSubmit();
+                            }
+                        }, 100);
+
+                        return false;
+                    }
+
+                    console.log('[Login] Submitting...');
+                });
+            }
+        });
+    </script>
+    @endpush
 </div>

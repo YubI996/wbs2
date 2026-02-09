@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Whistle Blowing System Kota Bontang - Laporkan dugaan pelanggaran secara aman dan rahasia">
     <title>{{ $title ?? 'WBS Kota Bontang' }}</title>
-    
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -109,5 +110,93 @@
     
     <!-- Livewire Scripts -->
     @livewireScripts
+    
+    <script>
+        // Global Livewire error handler for CSRF and session issues
+        document.addEventListener('livewire:init', () => {
+            Livewire.hook('request', ({ fail }) => {
+                fail(({ status, preventDefault }) => {
+                    // Handle CSRF token mismatch / session expired (419)
+                    if (status === 419) {
+                        preventDefault();
+                        
+                        if (confirm('Sesi Anda telah berakhir. Halaman akan dimuat ulang untuk memperbarui sesi.')) {
+                            window.location.reload();
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+        });
+
+        // CSRF Token Debugging
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+
+            if (!csrfMeta) {
+                console.error('[CSRF] ERROR: CSRF meta tag is missing!');
+            } else {
+                console.log('[CSRF] Token initialized:', csrfMeta.content.substring(0, 10) + '...');
+            }
+
+            console.log('[Livewire] Waiting for initialization...');
+        });
+
+        // Enhanced Livewire logging
+        document.addEventListener('livewire:init', () => {
+            console.log('[Livewire] Successfully initialized');
+
+            Livewire.hook('request', ({ uri, options, payload, respond, succeed, fail }) => {
+                console.log('[Livewire] Request:', payload.components?.[0]?.calls?.[0]?.method || 'unknown');
+
+                succeed(({ status }) => {
+                    console.log('[Livewire] Success:', status);
+                });
+
+                fail(({ status, preventDefault }) => {
+                    console.error('[Livewire] Failed:', status);
+
+                    if (status === 419) {
+                        preventDefault();
+                        console.warn('[CSRF] Token mismatch (419). Reloading...');
+                        alert('Sesi Anda telah berakhir. Halaman akan dimuat ulang.');
+                        window.location.reload();
+                    }
+                });
+            });
+        });
+
+        // Auto-refresh CSRF token every 10 minutes to prevent expiration
+        setInterval(function() {
+            fetch('/csrf-token', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('CSRF refresh failed with status: ' + response.status);
+            })
+            .then(data => {
+                // Update meta tag with new token
+                const metaTag = document.querySelector('meta[name="csrf-token"]');
+                if (metaTag && data.token) {
+                    metaTag.setAttribute('content', data.token);
+                    console.log('[CSRF] Token refreshed at', data.timestamp);
+                }
+            })
+            .catch(error => {
+                console.error('[CSRF] Refresh failed:', error);
+            });
+        }, 600000); // 10 minutes
+    </script>
+
+    @stack('scripts')
 </body>
 </html>

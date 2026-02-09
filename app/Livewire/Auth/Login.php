@@ -69,6 +69,9 @@ class Login extends Component
         if (!Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($throttleKey, 300); // 5 minutes
             
+            // Regenerate CSRF token to prevent "Page Expired" on next attempt
+            session()->regenerateToken();
+            
             throw ValidationException::withMessages([
                 'email' => 'Email atau password salah.',
             ]);

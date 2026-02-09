@@ -88,13 +88,13 @@
             </form>
 
             @if($recaptchaEnabled && $recaptchaSiteKey)
-            <div class="mt-4 text-center text-xs text-gray-400">
+            <div class="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
                 Dilindungi oleh reCAPTCHA
             </div>
             @endif
 
             <!-- Back to Home -->
-            <div class="mt-6 text-center">
+            <div class="mt-6 pt-4 {{ !($recaptchaEnabled && $recaptchaSiteKey) ? 'border-t border-gray-100' : '' }} text-center">
                 <a href="{{ route('home') }}" class="text-sm text-gray-500 hover:text-gray-700 transition">
                     ← Kembali ke Beranda
                 </a>

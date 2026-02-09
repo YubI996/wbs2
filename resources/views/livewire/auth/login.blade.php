@@ -32,7 +32,7 @@
                 <p class="text-gray-500 text-sm mt-1">Masuk ke dashboard pengelola</p>
             </div>
 
-            <form wire:submit="login" class="space-y-5">
+            <form wire:submit="login" class="space-y-6">
                 <!-- Email -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -58,7 +58,7 @@
                 </div>
 
                 <!-- Remember Me -->
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between pt-1">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" wire:model="remember"
                                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
@@ -67,7 +67,7 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit"
+                <button type="submit" style="margin-top: 1.75rem;"
                         class="w-full btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition"
                         wire:loading.attr="disabled"
                         wire:loading.class="opacity-75">

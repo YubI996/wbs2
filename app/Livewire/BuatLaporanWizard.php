@@ -146,18 +146,19 @@ class BuatLaporanWizard extends Component
     {
         $this->validate();
 
-        // Verify reCAPTCHA v2 if enabled
+        // Verify reCAPTCHA v3 if enabled
         if (RecaptchaService::isEnabled()) {
             if (!$this->recaptchaToken) {
-                $this->addError('recaptcha', 'Silakan centang verifikasi reCAPTCHA.');
+                $this->dispatch('refresh-recaptcha');
+                $this->addError('recaptcha', 'Verifikasi keamanan gagal. Silakan coba lagi.');
                 return;
             }
 
             $recaptcha = new RecaptchaService();
-            if (!$recaptcha->verify($this->recaptchaToken)) {
+            if (!$recaptcha->verify($this->recaptchaToken, 'submit_report')) {
                 $this->recaptchaToken = null;
-                $this->dispatch('reset-recaptcha');
-                $this->addError('recaptcha', 'Verifikasi reCAPTCHA gagal. Silakan coba lagi.');
+                $this->dispatch('refresh-recaptcha');
+                $this->addError('recaptcha', 'Verifikasi keamanan gagal. Silakan coba lagi.');
                 return;
             }
         }

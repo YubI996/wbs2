@@ -8,7 +8,7 @@
             <rect width="100%" height="100%" fill="url(#grid)"/>
         </svg>
     </div>
-    
+
     <div class="relative z-10 w-full max-w-md">
         <!-- Logo -->
         <div class="text-center mb-8">
@@ -24,61 +24,48 @@
                 </div>
             </a>
         </div>
-        
+
         <!-- Login Card -->
         <div class="bg-white rounded-2xl shadow-2xl p-8">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-900">Masuk</h2>
                 <p class="text-gray-500 text-sm mt-1">Masuk ke dashboard pengelola</p>
             </div>
-            
+
             <form wire:submit="login" class="space-y-5">
                 <!-- Email -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input type="email" id="email" wire:model="email" 
+                    <input type="email" id="email" wire:model="email"
                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                            placeholder="email@bontangkota.go.id"
                            autocomplete="email">
-                    @error('email') 
-                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
+                    @error('email')
+                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
-                
+
                 <!-- Password -->
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                    <input type="password" id="password" wire:model="password" 
+                    <input type="password" id="password" wire:model="password"
                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                            placeholder="••••••••"
                            autocomplete="current-password">
-                    @error('password') 
-                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
+                    @error('password')
+                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
                     @enderror
                 </div>
-                
+
                 <!-- Remember Me -->
                 <div class="flex items-center justify-between">
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" wire:model="remember" 
+                        <input type="checkbox" wire:model="remember"
                                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                         <span class="text-sm text-gray-600">Ingat saya</span>
                     </label>
                 </div>
-                
-                <!-- reCAPTCHA v2 -->
-                @if($recaptchaEnabled && $recaptchaSiteKey)
-                <div class="pt-2">
-                    <div id="recaptcha-container" class="g-recaptcha"
-                         data-sitekey="{{ $recaptchaSiteKey }}"
-                         data-callback="onRecaptchaSuccess"
-                         data-expired-callback="onRecaptchaExpired"></div>
-                    @error('recaptcha')
-                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
-                    @enderror
-                </div>
-                @endif
-                
+
                 <!-- Submit Button -->
                 <button type="submit"
                         class="w-full btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition"
@@ -99,7 +86,13 @@
                     <span wire:loading wire:target="login">Memproses...</span>
                 </button>
             </form>
-            
+
+            @if($recaptchaEnabled && $recaptchaSiteKey)
+            <div class="mt-4 text-center text-xs text-gray-400">
+                Dilindungi oleh reCAPTCHA
+            </div>
+            @endif
+
             <!-- Back to Home -->
             <div class="mt-6 text-center">
                 <a href="{{ route('home') }}" class="text-sm text-gray-500 hover:text-gray-700 transition">
@@ -107,31 +100,36 @@
                 </a>
             </div>
         </div>
-        
+
         <!-- Footer -->
         <div class="mt-8 text-center text-blue-200 text-sm">
             <p>&copy; {{ date('Y') }} WBS Kota Bontang</p>
         </div>
     </div>
-    
+
     @if($recaptchaEnabled && $recaptchaSiteKey)
-    <!-- reCAPTCHA v2 Script -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- reCAPTCHA v3 Script -->
+    <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
     <script>
-        function onRecaptchaSuccess(token) {
-            @this.set('recaptchaToken', token);
+        function executeRecaptcha() {
+            grecaptcha.ready(function() {
+                grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'login'}).then(function(token) {
+                    @this.set('recaptchaToken', token);
+                });
+            });
         }
 
-        function onRecaptchaExpired() {
-            @this.set('recaptchaToken', null);
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            executeRecaptcha();
 
-        // Listen for reset event from Livewire
+            // Refresh token every 90 seconds (tokens expire after 2 minutes)
+            setInterval(executeRecaptcha, 90000);
+        });
+
+        // Listen for refresh event from Livewire
         document.addEventListener('livewire:init', function() {
-            Livewire.on('reset-recaptcha', function() {
-                if (typeof grecaptcha !== 'undefined') {
-                    grecaptcha.reset();
-                }
+            Livewire.on('refresh-recaptcha', function() {
+                executeRecaptcha();
             });
         });
     </script>

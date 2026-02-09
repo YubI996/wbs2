@@ -9,6 +9,7 @@ class RecaptchaService
 {
     protected string $secretKey;
     protected string $verifyUrl = 'https://www.google.com/recaptcha/api/siteverify';
+    protected float $minScore = 0.5;
 
     public function __construct()
     {
@@ -16,9 +17,14 @@ class RecaptchaService
     }
 
     /**
-     * Verify reCAPTCHA v2 token
+     * Verify reCAPTCHA v3 token
+     *
+     * @param string|null $token The reCAPTCHA token
+     * @param string|null $expectedAction The expected action name (optional)
+     * @param string|null $remoteIp The user's IP address (optional)
+     * @return bool
      */
-    public function verify(?string $token, ?string $remoteIp = null): bool
+    public function verify(?string $token, ?string $expectedAction = null, ?string $remoteIp = null): bool
     {
         if (!self::isEnabled()) {
             return true; // Skip verification if disabled
@@ -38,17 +44,38 @@ class RecaptchaService
 
             $result = $response->json();
 
-            if ($result['success'] ?? false) {
-                return true;
+            // Check success
+            if (!($result['success'] ?? false)) {
+                if (isset($result['error-codes'])) {
+                    Log::warning('reCAPTCHA verification failed', [
+                        'error_codes' => $result['error-codes'],
+                    ]);
+                }
+                return false;
             }
 
-            if (isset($result['error-codes'])) {
-                Log::warning('reCAPTCHA verification failed', [
-                    'error_codes' => $result['error-codes'],
+            // Check score for v3 (score is between 0.0 and 1.0)
+            $score = $result['score'] ?? 0;
+            if ($score < $this->minScore) {
+                Log::warning('reCAPTCHA score too low', [
+                    'score' => $score,
+                    'min_score' => $this->minScore,
                 ]);
+                return false;
             }
 
-            return false;
+            // Optionally verify the action
+            if ($expectedAction && isset($result['action'])) {
+                if ($result['action'] !== $expectedAction) {
+                    Log::warning('reCAPTCHA action mismatch', [
+                        'expected' => $expectedAction,
+                        'actual' => $result['action'],
+                    ]);
+                    return false;
+                }
+            }
+
+            return true;
         } catch (\Exception $e) {
             Log::error('reCAPTCHA verification error', [
                 'message' => $e->getMessage(),
@@ -74,5 +101,14 @@ class RecaptchaService
         return config('recaptcha.enabled', true)
             && !empty(config('recaptcha.site_key'))
             && !empty(config('recaptcha.secret_key'));
+    }
+
+    /**
+     * Set minimum score threshold
+     */
+    public function setMinScore(float $score): self
+    {
+        $this->minScore = max(0.0, min(1.0, $score));
+        return $this;
     }
 }

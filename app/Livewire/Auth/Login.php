@@ -49,22 +49,25 @@ class Login extends Component
             ]);
         }
         
-        // Verify reCAPTCHA v2 if enabled
+        // Verify reCAPTCHA v3 if enabled
         if (RecaptchaService::isEnabled()) {
             if (!$this->recaptchaToken) {
+                // Request new token
+                $this->dispatch('refresh-recaptcha');
+
                 throw ValidationException::withMessages([
-                    'recaptcha' => 'Silakan centang verifikasi reCAPTCHA.',
+                    'email' => 'Verifikasi keamanan gagal. Silakan coba lagi.',
                 ]);
             }
 
             $recaptcha = new RecaptchaService();
-            if (!$recaptcha->verify($this->recaptchaToken)) {
-                // Reset token after failed verification
+            if (!$recaptcha->verify($this->recaptchaToken, 'login')) {
+                // Request new token after failed verification
                 $this->recaptchaToken = null;
-                $this->dispatch('reset-recaptcha');
+                $this->dispatch('refresh-recaptcha');
 
                 throw ValidationException::withMessages([
-                    'recaptcha' => 'Verifikasi reCAPTCHA gagal. Silakan coba lagi.',
+                    'email' => 'Verifikasi keamanan gagal. Silakan coba lagi.',
                 ]);
             }
         }

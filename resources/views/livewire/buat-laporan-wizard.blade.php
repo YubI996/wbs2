@@ -424,6 +424,19 @@
                                 </label>
                                 @error('agreed') <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span> @enderror
                             </div>
+
+                            <!-- reCAPTCHA v2 -->
+                            @if($recaptchaEnabled && $recaptchaSiteKey)
+                            <div class="pt-2">
+                                <div id="recaptcha-container" class="g-recaptcha"
+                                     data-sitekey="{{ $recaptchaSiteKey }}"
+                                     data-callback="onRecaptchaSuccess"
+                                     data-expired-callback="onRecaptchaExpired"></div>
+                                @error('recaptcha')
+                                    <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            @endif
                         </div>
                     @endif
                     
@@ -464,4 +477,27 @@
             </div>
         @endif
     </main>
+
+    @if($recaptchaEnabled && $recaptchaSiteKey)
+    <!-- reCAPTCHA v2 Script -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script>
+        function onRecaptchaSuccess(token) {
+            @this.set('recaptchaToken', token);
+        }
+
+        function onRecaptchaExpired() {
+            @this.set('recaptchaToken', null);
+        }
+
+        // Listen for reset event from Livewire
+        document.addEventListener('livewire:init', function() {
+            Livewire.on('reset-recaptcha', function() {
+                if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                }
+            });
+        });
+    </script>
+    @endif
 </div>

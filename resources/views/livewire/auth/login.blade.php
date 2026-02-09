@@ -66,11 +66,16 @@
                     </label>
                 </div>
                 
-                <!-- reCAPTCHA -->
+                <!-- reCAPTCHA v2 -->
                 @if($recaptchaEnabled && $recaptchaSiteKey)
                 <div class="pt-2">
-                    <div id="recaptcha-container"></div>
-                    <input type="hidden" wire:model="recaptchaToken" id="recaptcha-token">
+                    <div id="recaptcha-container" class="g-recaptcha"
+                         data-sitekey="{{ $recaptchaSiteKey }}"
+                         data-callback="onRecaptchaSuccess"
+                         data-expired-callback="onRecaptchaExpired"></div>
+                    @error('recaptcha')
+                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
+                    @enderror
                 </div>
                 @endif
                 
@@ -110,24 +115,24 @@
     </div>
     
     @if($recaptchaEnabled && $recaptchaSiteKey)
-    <!-- reCAPTCHA v3 Script -->
-    <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+    <!-- reCAPTCHA v2 Script -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            grecaptcha.ready(function() {
-                grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'login'}).then(function(token) {
-                    document.getElementById('recaptcha-token').value = token;
-                    @this.set('recaptchaToken', token);
-                });
+        function onRecaptchaSuccess(token) {
+            @this.set('recaptchaToken', token);
+        }
+
+        function onRecaptchaExpired() {
+            @this.set('recaptchaToken', null);
+        }
+
+        // Listen for reset event from Livewire
+        document.addEventListener('livewire:init', function() {
+            Livewire.on('reset-recaptcha', function() {
+                if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                }
             });
-            
-            // Refresh token every 2 minutes (tokens expire after 2 minutes)
-            setInterval(function() {
-                grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'login'}).then(function(token) {
-                    document.getElementById('recaptcha-token').value = token;
-                    @this.set('recaptchaToken', token);
-                });
-            }, 110000);
         });
     </script>
     @endif

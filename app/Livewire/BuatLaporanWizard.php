@@ -7,6 +7,7 @@ use App\Enums\ReportChannel;
 use App\Models\Aduan;
 use App\Models\JenisAduan;
 use App\Models\Pelapor;
+use App\Services\RecaptchaService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -48,7 +49,8 @@ class BuatLaporanWizard extends Component
     public string $nomor_registrasi = '';
     public string $tracking_password = '';
     public bool $agreed = false;
-    
+    public ?string $recaptchaToken = null;
+
     // Cached data
     public array $jenisAduanOptions = [];
     
@@ -143,7 +145,23 @@ class BuatLaporanWizard extends Component
     public function submit(): void
     {
         $this->validate();
-        
+
+        // Verify reCAPTCHA v2 if enabled
+        if (RecaptchaService::isEnabled()) {
+            if (!$this->recaptchaToken) {
+                $this->addError('recaptcha', 'Silakan centang verifikasi reCAPTCHA.');
+                return;
+            }
+
+            $recaptcha = new RecaptchaService();
+            if (!$recaptcha->verify($this->recaptchaToken)) {
+                $this->recaptchaToken = null;
+                $this->dispatch('reset-recaptcha');
+                $this->addError('recaptcha', 'Verifikasi reCAPTCHA gagal. Silakan coba lagi.');
+                return;
+            }
+        }
+
         try {
             DB::beginTransaction();
             
@@ -246,7 +264,9 @@ class BuatLaporanWizard extends Component
     
     public function render()
     {
-        return view('livewire.buat-laporan-wizard')
-            ->layout('components.layouts.guest', ['title' => 'Buat Laporan - WBS Kota Bontang']);
+        return view('livewire.buat-laporan-wizard', [
+            'recaptchaSiteKey' => RecaptchaService::getSiteKey(),
+            'recaptchaEnabled' => RecaptchaService::isEnabled(),
+        ])->layout('components.layouts.guest', ['title' => 'Buat Laporan - WBS Kota Bontang']);
     }
 }

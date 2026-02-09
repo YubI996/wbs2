@@ -3,19 +3,20 @@
 namespace App\Filament\Resources\AduanResource\RelationManagers;
 
 use App\Enums\FileType;
+use App\Models\Aduan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Gate;
 
 class BuktiPendukungsRelationManager extends RelationManager
 {
     protected static string $relationship = 'buktiPendukungs';
-    
+
     protected static ?string $title = 'Bukti Pendukung';
-    
+
     protected static ?string $modelLabel = 'Bukti';
 
     public function form(Form $form): Form
@@ -24,6 +25,7 @@ class BuktiPendukungsRelationManager extends RelationManager
             ->schema([
                 Forms\Components\FileUpload::make('file_path')
                     ->label('File')
+                    ->disk('local')
                     ->directory('bukti-pendukung')
                     ->acceptedFileTypes([
                         'application/pdf',
@@ -67,20 +69,37 @@ class BuktiPendukungsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->visible(fn (): bool => $this->canManageBukti()),
             ])
             ->actions([
                 Tables\Actions\Action::make('download')
                     ->label('Download')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->url(fn ($record) => Storage::url($record->file_path))
+                    ->url(fn ($record) => $record->download_url)
                     ->openUrlInNewTab(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->visible(fn (): bool => $this->canManageBukti()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn (): bool => $this->canManageBukti()),
                 ]),
             ]);
+    }
+
+    /**
+     * Check if user can manage bukti for this aduan.
+     */
+    protected function canManageBukti(): bool
+    {
+        $aduan = $this->getOwnerRecord();
+
+        if (!$aduan instanceof Aduan) {
+            return false;
+        }
+
+        return Gate::allows('manageBukti', $aduan);
     }
 }

@@ -190,10 +190,10 @@ class BuatLaporanWizard extends Component
                 'is_public' => true,
             ]);
             
-            // Handle file uploads
+            // Handle file uploads - store in private storage
             foreach ($this->bukti_files as $file) {
-                $path = $file->store('bukti-pendukung', 'public');
-                
+                $path = $file->store('bukti-pendukung', 'local');
+
                 $aduan->buktiPendukungs()->create([
                     'file_path' => $path,
                     'file_name' => $file->getClientOriginalName(),

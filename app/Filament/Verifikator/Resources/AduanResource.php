@@ -6,6 +6,7 @@ use App\Enums\AduanStatus;
 use App\Enums\ReportChannel;
 use App\Filament\Verifikator\Resources\AduanResource\Pages;
 use App\Models\Aduan;
+use App\Policies\AduanPolicy;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -14,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 
 class AduanResource extends Resource
 {
@@ -88,15 +90,18 @@ class AduanResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (Aduan $record) => $record->status === AduanStatus::PENDING)
+                    ->visible(fn (Aduan $record) => Gate::allows('updateStatus', $record)
+                        && $record->status === AduanStatus::PENDING)
                     ->action(function (Aduan $record) {
+                        Gate::authorize('updateStatus', $record);
+
                         $record->updateStatus(
                             AduanStatus::VERIFIKASI,
                             'Laporan sedang diverifikasi',
                             auth()->user(),
                             true
                         );
-                        
+
                         \App\Jobs\SendStatusUpdateEmail::dispatch($record, AduanStatus::VERIFIKASI, 'Laporan Anda sedang diverifikasi oleh tim kami.');
                         \Illuminate\Support\Facades\Cache::forget('admin_stats');
                     }),
@@ -105,15 +110,18 @@ class AduanResource extends Resource
                     ->icon('heroicon-o-cog')
                     ->color('info')
                     ->requiresConfirmation()
-                    ->visible(fn (Aduan $record) => $record->status === AduanStatus::VERIFIKASI)
+                    ->visible(fn (Aduan $record) => Gate::allows('updateStatus', $record)
+                        && $record->status === AduanStatus::VERIFIKASI)
                     ->action(function (Aduan $record) {
+                        Gate::authorize('updateStatus', $record);
+
                         $record->updateStatus(
                             AduanStatus::PROSES,
                             'Laporan dalam proses penanganan',
                             auth()->user(),
                             true
                         );
-                        
+
                         \App\Jobs\SendStatusUpdateEmail::dispatch($record, AduanStatus::PROSES, 'Laporan Anda sedang dalam proses penanganan.');
                         \Illuminate\Support\Facades\Cache::forget('admin_stats');
                     }),
@@ -127,15 +135,18 @@ class AduanResource extends Resource
                             ->required()
                             ->rows(3),
                     ])
-                    ->visible(fn (Aduan $record) => in_array($record->status, [AduanStatus::PENDING, AduanStatus::VERIFIKASI]))
+                    ->visible(fn (Aduan $record) => Gate::allows('updateStatus', $record)
+                        && in_array($record->status, [AduanStatus::PENDING, AduanStatus::VERIFIKASI]))
                     ->action(function (Aduan $record, array $data) {
+                        Gate::authorize('updateStatus', $record);
+
                         $record->updateStatus(
                             AduanStatus::DITOLAK,
                             $data['alasan'],
                             auth()->user(),
                             true
                         );
-                        
+
                         \App\Jobs\SendStatusUpdateEmail::dispatch($record, AduanStatus::DITOLAK, $data['alasan']);
                         \Illuminate\Support\Facades\Cache::forget('admin_stats');
                     }),

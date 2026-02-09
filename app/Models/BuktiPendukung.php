@@ -7,15 +7,33 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class BuktiPendukung extends Model
 {
     use HasFactory;
 
     /**
+     * The columns that should have UUIDs generated.
+     */
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
+        'uuid',
         'aduan_id',
         'file_path',
         'file_name',
@@ -93,10 +111,39 @@ class BuktiPendukung extends Model
     {
         parent::boot();
 
-        static::deleting(function ($bukti) {
-            if (Storage::exists($bukti->file_path)) {
-                Storage::delete($bukti->file_path);
+        static::creating(function ($bukti) {
+            // Generate UUID if not set
+            if (!$bukti->uuid) {
+                $bukti->uuid = Str::uuid()->toString();
             }
         });
+
+        static::deleting(function ($bukti) {
+            if (Storage::disk('local')->exists($bukti->file_path)) {
+                Storage::disk('local')->delete($bukti->file_path);
+            }
+        });
+    }
+
+    /**
+     * Get the secure download URL for this file.
+     */
+    public function getDownloadUrlAttribute(): string
+    {
+        return route('bukti.download', [
+            'aduanUuid' => $this->aduan->uuid,
+            'buktiUuid' => $this->uuid,
+        ]);
+    }
+
+    /**
+     * Get the secure preview URL for this file.
+     */
+    public function getPreviewUrlAttribute(): string
+    {
+        return route('bukti.preview', [
+            'aduanUuid' => $this->aduan->uuid,
+            'buktiUuid' => $this->uuid,
+        ]);
     }
 }

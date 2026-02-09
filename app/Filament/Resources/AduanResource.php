@@ -7,6 +7,7 @@ use App\Enums\ReportChannel;
 use App\Filament\Resources\AduanResource\Pages;
 use App\Filament\Resources\AduanResource\RelationManagers;
 use App\Models\Aduan;
+use App\Policies\AduanPolicy;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -16,6 +17,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Gate;
 
 class AduanResource extends Resource
 {
@@ -166,10 +168,18 @@ class AduanResource extends Resource
                     ->label('Update Status')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->form([
+                    ->visible(fn (Aduan $record): bool => Gate::allows('updateStatus', $record))
+                    ->form(fn (Aduan $record) => [
                         Forms\Components\Select::make('new_status')
                             ->label('Status Baru')
-                            ->options(AduanStatus::options())
+                            ->options(function () use ($record): array {
+                                $user = auth()->user();
+                                $allowed = AduanPolicy::getAllowedStatusTransitions($user, $record);
+
+                                return collect($allowed)
+                                    ->mapWithKeys(fn (AduanStatus $status) => [$status->value => $status->label()])
+                                    ->toArray();
+                            })
                             ->required()
                             ->native(false),
                         Forms\Components\Textarea::make('komentar')
@@ -180,21 +190,31 @@ class AduanResource extends Resource
                             ->default(true),
                     ])
                     ->action(function (Aduan $record, array $data) {
+                        // Verify authorization
+                        Gate::authorize('updateStatus', $record);
+
                         $newStatus = AduanStatus::from($data['new_status']);
+
+                        // Verify allowed transition
+                        $allowedStatuses = AduanPolicy::getAllowedStatusTransitions(auth()->user(), $record);
+                        if (!in_array($newStatus, $allowedStatuses)) {
+                            throw new \Exception('Transisi status tidak diizinkan');
+                        }
+
                         $komentar = $data['komentar'] ?? null;
-                        
+
                         $record->updateStatus(
                             $newStatus,
                             $komentar,
                             auth()->user(),
                             $data['is_public']
                         );
-                        
+
                         // Dispatch email notification if public timeline
                         if ($data['is_public']) {
                             \App\Jobs\SendStatusUpdateEmail::dispatch($record, $newStatus, $komentar);
                         }
-                        
+
                         // Clear cache
                         \Illuminate\Support\Facades\Cache::forget('admin_stats');
                         \Illuminate\Support\Facades\Cache::forget('landing_stats');

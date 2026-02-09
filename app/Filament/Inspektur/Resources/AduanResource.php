@@ -5,6 +5,7 @@ namespace App\Filament\Inspektur\Resources;
 use App\Enums\AduanStatus;
 use App\Filament\Inspektur\Resources\AduanResource\Pages;
 use App\Models\Aduan;
+use App\Policies\AduanPolicy;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -13,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 
 class AduanResource extends Resource
 {
@@ -86,15 +88,18 @@ class AduanResource extends Resource
                     ->icon('heroicon-o-magnifying-glass')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->visible(fn (Aduan $record) => $record->status === AduanStatus::PROSES)
+                    ->visible(fn (Aduan $record) => Gate::allows('updateStatus', $record)
+                        && $record->status === AduanStatus::PROSES)
                     ->action(function (Aduan $record) {
+                        Gate::authorize('updateStatus', $record);
+
                         $record->updateStatus(
                             AduanStatus::INVESTIGASI,
                             'Laporan sedang dalam investigasi',
                             auth()->user(),
                             true
                         );
-                        
+
                         \App\Jobs\SendStatusUpdateEmail::dispatch($record, AduanStatus::INVESTIGASI, 'Laporan Anda sedang dalam proses investigasi.');
                         \Illuminate\Support\Facades\Cache::forget('admin_stats');
                     }),
@@ -108,15 +113,18 @@ class AduanResource extends Resource
                             ->required()
                             ->rows(4),
                     ])
-                    ->visible(fn (Aduan $record) => in_array($record->status, [AduanStatus::PROSES, AduanStatus::INVESTIGASI]))
+                    ->visible(fn (Aduan $record) => Gate::allows('updateStatus', $record)
+                        && in_array($record->status, [AduanStatus::PROSES, AduanStatus::INVESTIGASI]))
                     ->action(function (Aduan $record, array $data) {
+                        Gate::authorize('updateStatus', $record);
+
                         $record->updateStatus(
                             AduanStatus::SELESAI,
                             $data['kesimpulan'],
                             auth()->user(),
                             true
                         );
-                        
+
                         \App\Jobs\SendStatusUpdateEmail::dispatch($record, AduanStatus::SELESAI, $data['kesimpulan']);
                         \Illuminate\Support\Facades\Cache::forget('admin_stats');
                         \Illuminate\Support\Facades\Cache::forget('landing_stats');

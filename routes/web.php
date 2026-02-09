@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BuktiPendukungController;
 use App\Livewire\Auth\Login;
 use App\Livewire\BuatLaporanWizard;
 use App\Livewire\CekStatusLaporan;
@@ -70,3 +71,16 @@ Route::get('/dashboard', function () {
         default => redirect()->route('home'),
     };
 })->name('dashboard')->middleware('auth');
+
+/*
+|--------------------------------------------------------------------------
+| Protected File Download Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/bukti/{aduanUuid}/{buktiUuid}/download', [BuktiPendukungController::class, 'download'])
+        ->name('bukti.download');
+    Route::get('/bukti/{aduanUuid}/{buktiUuid}/preview', [BuktiPendukungController::class, 'preview'])
+        ->name('bukti.preview');
+});

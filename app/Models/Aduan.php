@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AduanStatus;
 use App\Enums\ReportChannel;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,9 +18,26 @@ class Aduan extends Model
     use HasFactory, SoftDeletes;
 
     /**
+     * The columns that should have UUIDs generated.
+     */
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
+        'uuid',
         'nomor_registrasi',
         'tracking_password',
         'sequence',
@@ -68,11 +86,16 @@ class Aduan extends Model
         parent::boot();
 
         static::creating(function ($aduan) {
+            // Generate UUID if not set
+            if (!$aduan->uuid) {
+                $aduan->uuid = Str::uuid()->toString();
+            }
+
             // Generate nomor registrasi if not set
             if (!$aduan->nomor_registrasi) {
                 $aduan->generateNomorRegistrasi();
             }
-            
+
             // Generate tracking password if not set
             if (!$aduan->tracking_password) {
                 $plainPassword = Str::random(8);

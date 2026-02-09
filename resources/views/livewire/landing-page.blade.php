@@ -36,20 +36,21 @@
             <!-- Header with Logos -->
             <header class="flex justify-between items-center mb-12">
                 <div class="flex items-center gap-4">
-                    <!-- Logo Pemerintah Kota Bontang -->
-                    <img src="{{ asset('img/logo-bontang.png') }}" 
-                         alt="Logo Kota Bontang" 
-                         class="h-14 md:h-16 w-auto drop-shadow-lg">
-                    
-                    <!-- Logo WBS -->
+                    <!-- Logo WBS (Kiri) -->
                     <img src="{{ asset('img/logo-wbs.png') }}" 
                          alt="Logo WBS" 
-                         class="h-14 md:h-16 w-auto drop-shadow-lg">
+                         class="h-12 md:h-14 w-auto drop-shadow-lg">
                     
-                    <div class="hidden sm:block border-l border-white/30 pl-4">
+                    <!-- Text (Tengah) -->
+                    <div class="border-l border-white/30 pl-4 pr-4 border-r border-white/30">
                         <h1 class="text-white font-bold text-lg md:text-xl">Whistle Blowing System</h1>
                         <p class="text-blue-200 text-sm">Pemerintah Kota Bontang</p>
                     </div>
+                    
+                    <!-- Logo Pemerintah Kota Bontang (Kanan) -->
+                    <img src="{{ asset('img/logo-bontang.png') }}" 
+                         alt="Logo Kota Bontang" 
+                         class="h-12 md:h-14 w-auto drop-shadow-lg">
                 </div>
                 
                 <nav class="flex items-center gap-3 md:gap-4">
@@ -100,21 +101,21 @@
                 
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                    <div class="glass-card rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300">
-                        <div class="text-2xl md:text-3xl font-bold text-white mb-1">{{ number_format($stats['total_laporan'] ?? 0) }}</div>
-                        <div class="text-blue-200 text-xs md:text-sm">Total Laporan</div>
+                    <div class="bg-white/25 backdrop-blur-md rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300 border border-white/30 shadow-lg">
+                        <div class="text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">{{ number_format($stats['total_laporan'] ?? 0) }}</div>
+                        <div class="text-white/90 text-xs md:text-sm font-medium">Total Laporan</div>
                     </div>
-                    <div class="glass-card rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300">
-                        <div class="text-2xl md:text-3xl font-bold text-white mb-1">{{ number_format($stats['laporan_selesai'] ?? 0) }}</div>
-                        <div class="text-blue-200 text-xs md:text-sm">Laporan Selesai</div>
+                    <div class="bg-white/25 backdrop-blur-md rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300 border border-white/30 shadow-lg">
+                        <div class="text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">{{ number_format($stats['laporan_selesai'] ?? 0) }}</div>
+                        <div class="text-white/90 text-xs md:text-sm font-medium">Laporan Selesai</div>
                     </div>
-                    <div class="glass-card rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300">
-                        <div class="text-2xl md:text-3xl font-bold text-white mb-1">{{ number_format($stats['dalam_proses'] ?? 0) }}</div>
-                        <div class="text-blue-200 text-xs md:text-sm">Dalam Proses</div>
+                    <div class="bg-white/25 backdrop-blur-md rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300 border border-white/30 shadow-lg">
+                        <div class="text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">{{ number_format($stats['dalam_proses'] ?? 0) }}</div>
+                        <div class="text-white/90 text-xs md:text-sm font-medium">Dalam Proses</div>
                     </div>
-                    <div class="glass-card rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300">
-                        <div class="text-2xl md:text-3xl font-bold text-white mb-1">{{ $stats['kategori'] ?? 0 }}</div>
-                        <div class="text-blue-200 text-xs md:text-sm">Kategori</div>
+                    <div class="bg-white/25 backdrop-blur-md rounded-xl p-4 md:p-6 text-center hover-lift transition-all duration-300 border border-white/30 shadow-lg">
+                        <div class="text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">{{ $stats['kategori'] ?? 0 }}</div>
+                        <div class="text-white/90 text-xs md:text-sm font-medium">Kategori</div>
                     </div>
                 </div>
             </div>
@@ -208,104 +209,65 @@
                 </p>
             </div>
             
-            <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-5 max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl mx-auto">
                 <!-- Website Form - Primary -->
                 <a href="{{ route('buat-laporan') }}" 
-                   class="channel-card channel-card-primary group relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-6 text-center text-white shadow-lg overflow-hidden lg:col-span-1">
-                    <!-- Animated Background -->
-                    <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    
-                    <div class="relative z-10">
-                        <div class="w-16 h-16 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-                            </svg>
-                        </div>
-                        <h4 class="font-bold text-lg mb-2">Website WBS</h4>
-                        <p class="text-blue-100 text-sm mb-3">Form lengkap dengan tracking</p>
-                        <span class="inline-flex items-center gap-1 bg-white/20 text-sm px-3 py-1 rounded-full backdrop-blur">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                            </svg>
-                            Direkomendasikan
-                        </span>
+                   class="group relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 text-center text-white shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                    <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
                     </div>
+                    <h4 class="font-bold text-sm mb-1">Website</h4>
+                    <p class="text-blue-100 text-xs">wbs.bontangkota.go.id</p>
                 </a>
                 
                 <!-- WhatsApp -->
                 <a href="https://wa.me/628115859300" target="_blank" rel="noopener"
-                   class="channel-card group bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100 hover:border-green-200 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <div class="relative z-10">
-                        <div class="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:bg-green-500 transition-all duration-300">
-                            <svg class="w-8 h-8 text-green-600 group-hover:text-white transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                            </svg>
-                        </div>
-                        <h4 class="font-bold text-lg text-gray-900 mb-2">WhatsApp</h4>
-                        <p class="text-gray-500 text-sm">0811-5859-300</p>
-                        <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <span class="text-green-600 text-xs font-medium">Klik untuk chat →</span>
-                        </div>
+                   class="group relative bg-white rounded-xl p-4 text-center shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 hover:border-green-300 transition-all duration-300">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-green-500 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6 text-green-600 group-hover:text-white transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
                     </div>
+                    <h4 class="font-bold text-sm text-gray-900 mb-1">WhatsApp</h4>
+                    <p class="text-gray-500 text-xs">0811-5859-300</p>
                 </a>
                 
                 <!-- Email -->
                 <a href="mailto:inspektorat@bontangkota.go.id" 
-                   class="channel-card group bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100 hover:border-blue-200 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <div class="relative z-10">
-                        <div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:bg-blue-500 transition-all duration-300">
-                            <svg class="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
-                        <h4 class="font-bold text-lg text-gray-900 mb-2">Email</h4>
-                        <p class="text-gray-500 text-sm text-ellipsis overflow-hidden">inspektorat@bontangkota.go.id</p>
-                        <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <span class="text-blue-600 text-xs font-medium">Klik untuk kirim →</span>
-                        </div>
+                   class="group relative bg-white rounded-xl p-4 text-center shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 hover:border-blue-300 transition-all duration-300">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-500 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6 text-blue-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
                     </div>
+                    <h4 class="font-bold text-sm text-gray-900 mb-1">Email</h4>
+                    <p class="text-gray-500 text-xs truncate">inspektorat@bontangkota.go.id</p>
                 </a>
                 
                 <!-- Instagram -->
                 <a href="https://instagram.com/inspektorat_bontang" target="_blank" rel="noopener"
-                   class="channel-card group bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100 hover:border-pink-200 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-pink-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <div class="relative z-10">
-                        <div class="w-16 h-16 bg-gradient-to-br from-pink-100 to-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:from-pink-500 group-hover:to-purple-600 transition-all duration-300">
-                            <svg class="w-8 h-8 text-pink-600 group-hover:text-white transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                            </svg>
-                        </div>
-                        <h4 class="font-bold text-lg text-gray-900 mb-2">Instagram</h4>
-                        <p class="text-gray-500 text-sm">@inspektorat_bontang</p>
-                        <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <span class="text-pink-600 text-xs font-medium">Klik untuk DM →</span>
-                        </div>
+                   class="group relative bg-white rounded-xl p-4 text-center shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 hover:border-pink-300 transition-all duration-300">
+                    <div class="w-12 h-12 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:from-pink-500 group-hover:to-purple-500 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6 text-pink-600 group-hover:text-white transition-colors duration-300" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
                     </div>
+                    <h4 class="font-bold text-sm text-gray-900 mb-1">Instagram</h4>
+                    <p class="text-gray-500 text-xs">@inspektorat_bontang</p>
                 </a>
                 
                 <!-- SP4N LAPOR -->
-                <a href="https://lapor.go.id" target="_blank" rel="noopener"
-                   class="channel-card group bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100 hover:border-red-200 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-red-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <div class="relative z-10">
-                        <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:bg-red-500 transition-all duration-300">
-                            <svg class="w-8 h-8 text-red-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
-                        </div>
-                        <h4 class="font-bold text-lg text-gray-900 mb-2">SP4N LAPOR!</h4>
-                        <p class="text-gray-500 text-sm">Kanal pengaduan nasional</p>
-                        <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <span class="text-red-600 text-xs font-medium">Klik untuk buka →</span>
-                        </div>
+                <a href="https://bontangkota.lapor.go.id" target="_blank" rel="noopener"
+                   class="group relative bg-white rounded-xl p-4 text-center shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 hover:border-red-300 transition-all duration-300">
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-red-500 group-hover:scale-110 transition-all duration-300">
+                        <svg class="w-6 h-6 text-red-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
                     </div>
+                    <h4 class="font-bold text-sm text-gray-900 mb-1">SP4N LAPOR!</h4>
+                    <p class="text-gray-500 text-xs">lapor.go.id</p>
                 </a>
             </div>
         </section>
@@ -427,6 +389,7 @@
     </footer>
 </div>
 
+@push('styles')
 <style>
 /* Scroll Animation */
 .scroll-animate.animate-in {
@@ -559,3 +522,4 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 </style>
+@endpush

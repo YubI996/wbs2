@@ -99,6 +99,8 @@
             box-shadow: 0 0 0 3px oklch(0.53 0.21 263.57 / 0.4);
         }
     </style>
+
+    @stack('styles')
 </head>
 <body class="bg-gray-50 antialiased">
     <!-- Skip to content for accessibility -->

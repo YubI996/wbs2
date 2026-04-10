@@ -1,169 +1,228 @@
 #!/bin/bash
 set -e
 
-# Colors
+# ============================================================
+# WBS v2 - Server Deployment Installer
+# Untuk: wbs.atletik.biz.id
+# ============================================================
+
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-echo -e "${GREEN}"
-echo "========================================"
-echo "  WBS v2 - Docker Installer"
-echo "========================================"
-echo -e "${NC}"
+# Configuration
+PROJECT_DIR="/var/www/wbs"
+PROXY_DIR="/home/prasasti/proxy"
+DOMAIN="wbs.atletik.biz.id"
+SSL_SRC="/home/prasasti/SSLBARU/wbs.ssl"
+DOCKER_NETWORK="wbs_wbs-network"
+PROXY_CONTAINER="nginx-proxy"
 
-# Check if running as root or with sudo
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}Please run as root or with sudo${NC}"
-    exit 1
-fi
-
-# Check Docker
-if ! command -v docker &> /dev/null; then
-    echo -e "${RED}Docker is not installed. Please install Docker first.${NC}"
-    exit 1
-fi
-
-# Check Docker Compose
-if command -v docker-compose &> /dev/null; then
-    COMPOSE_CMD="docker-compose"
-elif docker compose version &> /dev/null; then
-    COMPOSE_CMD="docker compose"
-else
-    echo -e "${RED}Docker Compose is not installed. Please install Docker Compose first.${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}Using: $COMPOSE_CMD${NC}"
-
-# Get current directory
-INSTALL_DIR=$(pwd)
-echo -e "${YELLOW}Install directory: $INSTALL_DIR${NC}"
-
-# Step 1: Create .env if not exists
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}WBS v2 - Server Deployment Setup${NC}"
+echo -e "${BLUE}Domain: $DOMAIN${NC}"
+echo -e "${BLUE}========================================${NC}"
 echo ""
-echo -e "${YELLOW}Step 1: Setting up environment...${NC}"
 
-if [ ! -f ".env" ]; then
-    if [ -f ".env.example" ]; then
-        cp .env.example .env
-        echo "Created .env from .env.example"
-    else
-        echo -e "${RED}.env.example not found!${NC}"
+# ============================================================
+# [1/7] Check .env file
+# ============================================================
+echo -e "${YELLOW}[1/7]${NC} Checking .env configuration..."
+if [ ! -f "$PROJECT_DIR/.env" ]; then
+    if [ ! -f "$PROJECT_DIR/.env.example" ]; then
+        echo -e "${RED}ERROR: .env.example not found in $PROJECT_DIR${NC}"
         exit 1
     fi
+
+    echo -e "${YELLOW}>>> Copying .env.example to .env${NC}"
+    cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
+
+    echo -e "${YELLOW}>>> Please edit $PROJECT_DIR/.env with your production values:${NC}"
+    echo "  - DB_PASSWORD (strong password)"
+    echo "  - DB_ROOT_PASSWORD (strong password)"
+    echo "  - RECAPTCHA_SITE_KEY"
+    echo "  - RECAPTCHA_SECRET_KEY"
+    echo "  - MAIL_* settings if needed"
+    echo ""
+    echo -e "${RED}ERROR: Please configure .env and run this script again${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ .env file exists${NC}"
+echo ""
+
+# ============================================================
+# [2/7] Build and start Docker containers
+# ============================================================
+echo -e "${YELLOW}[2/7]${NC} Building and starting Docker containers..."
+cd "$PROJECT_DIR"
+docker compose up -d --build
+echo -e "${GREEN}✓ Containers started${NC}"
+echo ""
+
+# Wait for app to be ready
+echo -e "${YELLOW}    Waiting for application to be ready...${NC}"
+sleep 10
+echo ""
+
+# ============================================================
+# [3/7] Install dependencies and setup application
+# ============================================================
+echo -e "${YELLOW}[3/7]${NC} Installing dependencies and running migrations..."
+
+echo -e "${YELLOW}    Installing Composer dependencies...${NC}"
+docker exec wbs-app composer install --no-dev --optimize-autoloader
+
+echo -e "${YELLOW}    Generating APP_KEY...${NC}"
+docker exec wbs-app php artisan key:generate --force
+
+echo -e "${YELLOW}    Running database migrations...${NC}"
+docker exec wbs-app php artisan migrate --force
+
+echo -e "${YELLOW}    Caching configuration...${NC}"
+docker exec wbs-app php artisan config:cache
+docker exec wbs-app php artisan route:cache
+docker exec wbs-app php artisan view:cache
+
+echo -e "${GREEN}✓ Application setup complete${NC}"
+echo ""
+
+# ============================================================
+# [4/7] Copy SSL certificates
+# ============================================================
+echo -e "${YELLOW}[4/7]${NC} Installing SSL certificates..."
+
+SSL_DIR="$PROXY_DIR/ssl/$DOMAIN"
+mkdir -p "$SSL_DIR"
+
+if [ ! -f "$SSL_SRC/certificate.crt" ] || [ ! -f "$SSL_SRC/private.crt" ]; then
+    echo -e "${RED}ERROR: SSL certificates not found in $SSL_SRC${NC}"
+    echo "Expected files:"
+    echo "  - $SSL_SRC/certificate.crt"
+    echo "  - $SSL_SRC/private.crt"
+    exit 1
 fi
 
-# Generate passwords if placeholders exist
-generate_password() {
-    openssl rand -base64 16 | tr -d '/+=' | head -c 20
+cp "$SSL_SRC/certificate.crt" "$SSL_DIR/fullchain.pem"
+cp "$SSL_SRC/private.crt"     "$SSL_DIR/privkey.pem"
+chmod 644 "$SSL_DIR/fullchain.pem"
+chmod 600 "$SSL_DIR/privkey.pem"
+
+echo -e "${GREEN}✓ SSL certificates installed to $SSL_DIR${NC}"
+echo ""
+
+# ============================================================
+# [5/7] Create nginx proxy configuration
+# ============================================================
+echo -e "${YELLOW}[5/7]${NC} Creating nginx proxy configuration..."
+
+PROXY_CONFIG="$PROXY_DIR/nginx/conf.d/$DOMAIN.conf"
+mkdir -p "$PROXY_DIR/nginx/conf.d"
+
+cat > "$PROXY_CONFIG" << 'EOF'
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name wbs.atletik.biz.id;
+    return 301 https://$host$request_uri;
 }
 
-# Check and set DB passwords
-if grep -q "DB_PASSWORD=wbs_password_change_me\|DB_PASSWORD=$" .env; then
-    NEW_PASS=$(generate_password)
-    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$NEW_PASS/" .env
-    echo -e "${GREEN}Generated DB_PASSWORD${NC}"
+# HTTPS server
+server {
+    listen 443 ssl;
+    server_name wbs.atletik.biz.id;
+
+    # SSL certificates
+    ssl_certificate     /etc/nginx/ssl/wbs.atletik.biz.id/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/wbs.atletik.biz.id/privkey.pem;
+
+    # SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Proxy to local container
+    location / {
+        proxy_pass         http://wbs-nginx:80;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto https;
+        proxy_set_header   X-Forwarded-Host  $host;
+        proxy_set_header   X-Forwarded-Port  443;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        "upgrade";
+        proxy_read_timeout 90;
+        proxy_send_timeout 90;
+    }
+}
+EOF
+
+echo -e "${GREEN}✓ Proxy configuration created at $PROXY_CONFIG${NC}"
+echo ""
+
+# ============================================================
+# [6/7] Connect Docker network to proxy
+# ============================================================
+echo -e "${YELLOW}[6/7]${NC} Connecting Docker network to proxy..."
+
+# Check if proxy container is running
+if ! docker ps | grep -q "$PROXY_CONTAINER"; then
+    echo -e "${RED}WARNING: Proxy container '$PROXY_CONTAINER' is not running${NC}"
+    echo "Please ensure nginx-proxy container is running in $PROXY_DIR"
+else
+    # Connect network if not already connected
+    docker network connect "$DOCKER_NETWORK" "$PROXY_CONTAINER" 2>/dev/null || true
+    echo -e "${GREEN}✓ Docker network connected to proxy${NC}"
 fi
 
-if grep -q "DB_ROOT_PASSWORD=.*change.*\|DB_ROOT_PASSWORD=$" .env; then
-    NEW_ROOT_PASS=$(generate_password)
-    sed -i "s/DB_ROOT_PASSWORD=.*/DB_ROOT_PASSWORD=$NEW_ROOT_PASS/" .env
-    echo -e "${GREEN}Generated DB_ROOT_PASSWORD${NC}"
+echo ""
+
+# ============================================================
+# [7/7] Reload proxy nginx
+# ============================================================
+echo -e "${YELLOW}[7/7]${NC} Reloading proxy nginx configuration..."
+
+if docker exec "$PROXY_CONTAINER" nginx -t 2>/dev/null; then
+    docker exec "$PROXY_CONTAINER" nginx -s reload
+    echo -e "${GREEN}✓ Proxy nginx reloaded${NC}"
+else
+    echo -e "${YELLOW}WARNING: Could not reload proxy nginx${NC}"
+    echo "Please manually reload: docker exec $PROXY_CONTAINER nginx -s reload"
 fi
 
-# Generate APP_KEY
-if grep -q "APP_KEY=$" .env; then
-    APP_KEY="base64:$(openssl rand -base64 32)"
-    sed -i "s/APP_KEY=.*/APP_KEY=$APP_KEY/" .env
-    echo -e "${GREEN}Generated APP_KEY${NC}"
-fi
-
-# Step 2: Create directories
 echo ""
-echo -e "${YELLOW}Step 2: Creating directories...${NC}"
-mkdir -p storage/app/public
-mkdir -p storage/framework/{sessions,views,cache}
-mkdir -p storage/logs
-mkdir -p bootstrap/cache
-chmod -R 775 storage bootstrap/cache
-echo -e "${GREEN}Directories created${NC}"
-
-# Step 3: Stop existing containers
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}[OK] WBS v2 deployment complete!${NC}"
+echo -e "${GREEN}========================================${NC}"
 echo ""
-echo -e "${YELLOW}Step 3: Stopping existing containers...${NC}"
-$COMPOSE_CMD down 2>/dev/null || true
-echo -e "${GREEN}Containers stopped${NC}"
-
-# Step 4: Build
+echo "Next steps:"
+echo "1. Test the application:"
+echo -e "   ${BLUE}curl -I https://$DOMAIN${NC}"
 echo ""
-echo -e "${YELLOW}Step 4: Building Docker images...${NC}"
-$COMPOSE_CMD build --no-cache
-echo -e "${GREEN}Build complete${NC}"
-
-# Step 5: Start database first
+echo "2. Check logs:"
+echo -e "   ${BLUE}docker logs -f wbs-app${NC}"
+echo -e "   ${BLUE}docker logs -f wbs-nginx${NC}"
 echo ""
-echo -e "${YELLOW}Step 5: Starting database...${NC}"
-$COMPOSE_CMD up -d db redis
-echo "Waiting for database to be ready..."
-sleep 15
-
-# Check database health
-MAX_TRIES=30
-TRIES=0
-while [ $TRIES -lt $MAX_TRIES ]; do
-    if $COMPOSE_CMD exec -T db mysqladmin ping -h localhost --silent 2>/dev/null; then
-        echo -e "${GREEN}Database is ready!${NC}"
-        break
-    fi
-    TRIES=$((TRIES + 1))
-    echo "Waiting for database... ($TRIES/$MAX_TRIES)"
-    sleep 2
-done
-
-if [ $TRIES -eq $MAX_TRIES ]; then
-    echo -e "${YELLOW}Database might still be initializing, continuing anyway...${NC}"
-fi
-
-# Step 6: Start application
+echo "3. Access the application:"
+echo -e "   ${BLUE}https://$DOMAIN${NC}"
 echo ""
-echo -e "${YELLOW}Step 6: Starting application...${NC}"
-$COMPOSE_CMD up -d app
-sleep 10
-
-# Step 7: Start web and queue
+echo "Container information:"
+echo "  - PHP App:   wbs-app"
+echo "  - Nginx:     wbs-nginx (port 8001 on host)"
+echo "  - Database:  wbs-db"
+echo "  - Redis:     wbs-redis"
+echo "  - Queue:     wbs-queue"
 echo ""
-echo -e "${YELLOW}Step 7: Starting web server and queue worker...${NC}"
-$COMPOSE_CMD up -d web queue
-
-# Step 8: Create storage link
+echo "Docker network: $DOCKER_NETWORK"
+echo "Proxy domain:   $DOMAIN"
 echo ""
-echo -e "${YELLOW}Step 8: Creating storage link...${NC}"
-$COMPOSE_CMD exec -T app php artisan storage:link 2>/dev/null || echo "Storage link may already exist"
-
-# Step 9: Show status
-echo ""
-echo -e "${YELLOW}Step 9: Checking status...${NC}"
-sleep 5
-$COMPOSE_CMD ps
-
-# Get APP_PORT
-APP_PORT=$(grep -E "^APP_PORT=" .env | cut -d'=' -f2)
-APP_PORT=${APP_PORT:-8080}
-
-echo ""
-echo -e "${GREEN}========================================"
-echo "  Installation Complete!"
-echo "========================================"
-echo -e "${NC}"
-echo -e "Application URL: ${GREEN}http://YOUR_SERVER_IP:$APP_PORT${NC}"
-echo ""
-echo "Useful commands:"
-echo "  $COMPOSE_CMD ps          - Check status"
-echo "  $COMPOSE_CMD logs -f     - View logs"
-echo "  $COMPOSE_CMD down        - Stop all"
-echo "  $COMPOSE_CMD up -d       - Start all"
-echo ""
-echo -e "${YELLOW}Note: First startup may take a minute for migrations.${NC}"
-echo -e "${YELLOW}Check logs with: $COMPOSE_CMD logs -f app${NC}"

@@ -2,55 +2,113 @@
 
 namespace App\Services;
 
-use ReCaptcha\ReCaptcha;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class RecaptchaService
 {
-    protected ReCaptcha $recaptcha;
-    
+    protected string $secretKey;
+    protected string $verifyUrl = 'https://www.google.com/recaptcha/api/siteverify';
     protected float $minScore = 0.5;
-    
+
     public function __construct()
     {
-        $this->recaptcha = new ReCaptcha(config('services.recaptcha.secret'));
+        $this->secretKey = config('recaptcha.secret_key', '');
     }
-    
+
     /**
      * Verify reCAPTCHA v3 token
+     *
+     * @param string|null $token The reCAPTCHA token
+     * @param string|null $expectedAction The expected action name (optional)
+     * @param string|null $remoteIp The user's IP address (optional)
+     * @return bool
      */
-    public function verify(string $token, ?string $action = null): bool
+    public function verify(?string $token, ?string $expectedAction = null, ?string $remoteIp = null): bool
     {
-        if (!config('services.recaptcha.enabled', true)) {
+        if (!self::isEnabled()) {
             return true; // Skip verification if disabled
         }
-        
-        $response = $this->recaptcha
-            ->setExpectedHostname(parse_url(config('app.url'), PHP_URL_HOST))
-            ->setScoreThreshold($this->minScore)
-            ->verify($token, request()->ip());
-        
-        if ($action) {
-            return $response->isSuccess() && $response->getAction() === $action;
+
+        if (empty($token)) {
+            Log::warning('reCAPTCHA verification failed: No token provided');
+            return false;
         }
-        
-        return $response->isSuccess();
+
+        try {
+            $response = Http::asForm()->post($this->verifyUrl, [
+                'secret' => $this->secretKey,
+                'response' => $token,
+                'remoteip' => $remoteIp ?? request()->ip(),
+            ]);
+
+            $result = $response->json();
+
+            // Check success
+            if (!($result['success'] ?? false)) {
+                if (isset($result['error-codes'])) {
+                    Log::warning('reCAPTCHA verification failed', [
+                        'error_codes' => $result['error-codes'],
+                    ]);
+                }
+                return false;
+            }
+
+            // Check score for v3 (score is between 0.0 and 1.0)
+            $score = $result['score'] ?? 0;
+            if ($score < $this->minScore) {
+                Log::warning('reCAPTCHA score too low', [
+                    'score' => $score,
+                    'min_score' => $this->minScore,
+                ]);
+                return false;
+            }
+
+            // Optionally verify the action
+            if ($expectedAction && isset($result['action'])) {
+                if ($result['action'] !== $expectedAction) {
+                    Log::warning('reCAPTCHA action mismatch', [
+                        'expected' => $expectedAction,
+                        'actual' => $result['action'],
+                    ]);
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('reCAPTCHA verification error', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
-    
+
     /**
      * Get reCAPTCHA site key
      */
     public static function getSiteKey(): ?string
     {
-        return config('services.recaptcha.site_key');
+        return config('recaptcha.site_key');
     }
-    
+
     /**
      * Check if reCAPTCHA is enabled
      */
     public static function isEnabled(): bool
     {
-        return config('services.recaptcha.enabled', true) 
-            && config('services.recaptcha.site_key') 
-            && config('services.recaptcha.secret');
+        return config('recaptcha.enabled', true)
+            && !empty(config('recaptcha.site_key'))
+            && !empty(config('recaptcha.secret_key'));
+    }
+
+    /**
+     * Set minimum score threshold
+     */
+    public function setMinScore(float $score): self
+    {
+        $this->minScore = max(0.0, min(1.0, $score));
+        return $this;
     }
 }

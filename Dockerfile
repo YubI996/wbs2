@@ -52,15 +52,16 @@ RUN apk add --no-cache \
 
 # PHP config
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
 
-WORKDIR /var/www/html
+WORKDIR /var/www
 
 # Copy app from builders
 COPY --from=composer-builder /app ./
 COPY --from=npm-builder /app/public/build ./public/build
 
-# Setup directories
+# Setup directories and permissions
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache

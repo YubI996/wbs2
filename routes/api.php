@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AduanController;
+use App\Http\Controllers\Api\StatistikController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 // Public endpoints (tanpa API key)
 Route::get('/jenis-aduans', [AduanController::class, 'jenisAduans'])
     ->name('api.jenis-aduans');
+
+Route::get('/statistik', [StatistikController::class, 'index'])
+    ->name('api.statistik');
 
 // Protected endpoints (dengan API key)
 Route::middleware('api.key')->group(function () {

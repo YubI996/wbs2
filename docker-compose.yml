@@ -9,8 +9,8 @@ services:
     container_name: wbs-app
     restart: unless-stopped
     volumes:
-      - ./storage:/var/www/html/storage
-      - ./.env:/var/www/html/.env
+      - ./:/var/www
+      - ./.env:/var/www/.env
     environment:
       DB_HOST: db
       DB_PORT: 3306
@@ -18,24 +18,23 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
     networks:
-      - wbs-net
+      - wbs-network
     depends_on:
       db:
         condition: service_healthy
 
-  # Nginx
-  web:
+  # Nginx Web Server
+  nginx:
     image: nginx:alpine
-    container_name: wbs-web
+    container_name: wbs-nginx
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8080}:80"
+      - "8001:80"
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./public:/var/www/html/public:ro
-      - ./storage/app/public:/var/www/html/storage:ro
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/:ro
     networks:
-      - wbs-net
+      - wbs-network
     depends_on:
       - app
 
@@ -48,8 +47,8 @@ services:
     restart: unless-stopped
     command: php artisan queue:work --sleep=3 --tries=3 --max-jobs=1000
     volumes:
-      - ./storage:/var/www/html/storage
-      - ./.env:/var/www/html/.env
+      - ./:/var/www
+      - ./.env:/var/www/.env
     environment:
       DB_HOST: db
       DB_PORT: 3306
@@ -57,11 +56,11 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
     networks:
-      - wbs-net
+      - wbs-network
     depends_on:
       - app
 
-  # MySQL
+  # MySQL Database
   db:
     image: mysql:8.0
     container_name: wbs-db
@@ -74,8 +73,8 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - wbs-net
-    command: --default-authentication-plugin=mysql_native_password --skip-ssl
+      - wbs-network
+    command: --default-authentication-plugin=mysql_native_password --skip-ssl --max_connections=1000
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 5s
@@ -83,7 +82,7 @@ services:
       retries: 10
       start_period: 30s
 
-  # Redis (optional)
+  # Redis Cache & Session
   redis:
     image: redis:7-alpine
     container_name: wbs-redis
@@ -91,10 +90,10 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - wbs-net
+      - wbs-network
 
 networks:
-  wbs-net:
+  wbs-network:
     driver: bridge
 
 volumes:

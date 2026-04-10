@@ -74,6 +74,9 @@ class AduanResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordClasses(fn (Aduan $record) => $record->status === AduanStatus::DITOLAK
+                ? 'opacity-60'
+                : null)
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
@@ -81,6 +84,7 @@ class AduanResource extends Resource
                         AduanStatus::PENDING->value => AduanStatus::PENDING->label(),
                         AduanStatus::VERIFIKASI->value => AduanStatus::VERIFIKASI->label(),
                         AduanStatus::PROSES->value => AduanStatus::PROSES->label(),
+                        AduanStatus::DITOLAK->value => AduanStatus::DITOLAK->label(),
                     ]),
             ])
             ->actions([
@@ -198,7 +202,9 @@ class AduanResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Resources\AduanResource\RelationManagers\BuktiPendukungsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -217,6 +223,8 @@ class AduanResource extends Resource
                 AduanStatus::PENDING,
                 AduanStatus::VERIFIKASI,
                 AduanStatus::PROSES,
-            ]);
+                AduanStatus::DITOLAK,
+            ])
+            ->orderByRaw("CASE WHEN status = 'ditolak' THEN 1 ELSE 0 END ASC");
     }
 }

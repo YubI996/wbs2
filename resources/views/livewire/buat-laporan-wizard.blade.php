@@ -169,7 +169,8 @@
                             
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">No. Handphone <span class="text-red-500">*</span></label>
-                                <input type="tel" id="phone" wire:model="phone" 
+                                <input type="tel" id="phone" wire:model="phone"
+                                       inputmode="numeric" pattern="[0-9]*"
                                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                        placeholder="08xxxxxxxxxx">
                                 @error('phone') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
@@ -424,6 +425,23 @@
                                 </label>
                                 @error('agreed') <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span> @enderror
                             </div>
+
+                            @error('recaptcha')
+                                <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                                    <div class="flex gap-3">
+                                        <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <span class="text-red-700 text-sm">{{ $message }}</span>
+                                    </div>
+                                </div>
+                            @enderror
+
+                            @if($recaptchaEnabled && $recaptchaSiteKey)
+                            <div class="text-center text-xs text-gray-400">
+                                Dilindungi oleh reCAPTCHA
+                            </div>
+                            @endif
                         </div>
                     @endif
                     
@@ -464,4 +482,32 @@
             </div>
         @endif
     </main>
+
+    @if($recaptchaEnabled && $recaptchaSiteKey)
+    <!-- reCAPTCHA v3 Script -->
+    <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+    <script>
+        function executeRecaptcha() {
+            grecaptcha.ready(function() {
+                grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'submit_report'}).then(function(token) {
+                    @this.set('recaptchaToken', token);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            executeRecaptcha();
+
+            // Refresh token every 90 seconds (tokens expire after 2 minutes)
+            setInterval(executeRecaptcha, 90000);
+        });
+
+        // Listen for refresh event from Livewire
+        document.addEventListener('livewire:init', function() {
+            Livewire.on('refresh-recaptcha', function() {
+                executeRecaptcha();
+            });
+        });
+    </script>
+    @endif
 </div>

@@ -106,8 +106,6 @@ class Login extends BaseLogin
             return null;
         }
 
-        session()->regenerate();
-
         return app(LoginResponse::class);
     }
     

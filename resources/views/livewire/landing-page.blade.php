@@ -153,7 +153,7 @@
                 </a>
                 
                 <!-- SP4N LAPOR -->
-                <a href="https://lapor.go.id" target="_blank" rel="noopener"
+                <a href="https://bontangkota.lapor.go.id" target="_blank" rel="noopener"
                    class="hover-lift bg-white rounded-2xl p-6 text-center shadow-lg border border-gray-100">
                     <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                         <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

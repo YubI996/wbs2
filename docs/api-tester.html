@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WBS API Tester</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    a {
+      color: #60a5fa;
+    }
+
+    /* Layout */
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .main {
+      padding: 32px;
+      overflow-y: auto;
+    }
+
+    /* Sidebar */
+    .sidebar-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 0 20px 12px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background .15s;
+      border-left: 3px solid transparent;
+      font-size: 14px;
+    }
+
+    .nav-item:hover {
+      background: #334155;
+    }
+
+    .nav-item.active {
+      background: #1d4ed820;
+      border-left-color: #3b82f6;
+      color: #60a5fa;
+    }
+
+    .nav-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .badge-get {
+      background: #16a34a20;
+      color: #4ade80;
+      border: 1px solid #16a34a50;
+    }
+
+    .badge-post {
+      background: #d9770620;
+      color: #fb923c;
+      border: 1px solid #d9770650;
+    }
+
+    .badge-pub {
+      background: #0891b220;
+      color: #22d3ee;
+      border: 1px solid #0891b250;
+    }
+
+    /* Config bar */
+    .config-bar {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .config-bar label {
+      font-size: 12px;
+      color: #94a3b8;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .config-bar input {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 8px 12px;
+      font-size: 13px;
+      width: 100%;
+    }
+
+    .config-bar input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .field-url {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .field-key {
+      flex: 2;
+      min-width: 280px;
+    }
+
+    /* Panel */
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .endpoint-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .method-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .method-get {
+      background: #16a34a30;
+      color: #4ade80;
+      border: 1px solid #16a34a60;
+    }
+
+    .method-post {
+      background: #d9770630;
+      color: #fb923c;
+      border: 1px solid #d9770660;
+    }
+
+    .endpoint-url {
+      font-family: monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      background: #1e293b;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .auth-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .auth-req {
+      background: #7c3aed20;
+      color: #a78bfa;
+      border: 1px solid #7c3aed50;
+    }
+
+    .auth-pub {
+      background: #0891b220;
+      color: #22d3ee;
+      border: 1px solid #0891b250;
+    }
+
+    /* Form */
+    .section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 12px 16px;
+      background: #334155;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-body {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field label {
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .req {
+      color: #f87171;
+      font-size: 10px;
+      background: #7f1d1d30;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      transition: border .15s;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .field .hint {
+      font-size: 11px;
+      color: #475569;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    /* File drop */
+    .file-drop {
+      border: 2px dashed #334155;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border .2s, background .2s;
+    }
+
+    .file-drop:hover,
+    .file-drop.drag {
+      border-color: #3b82f6;
+      background: #1d4ed810;
+    }
+
+    .file-drop p {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    #file-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .file-item span {
+      color: #94a3b8;
+      margin-left: 8px;
+    }
+
+    .file-remove {
+      color: #f87171;
+      cursor: pointer;
+      font-size: 16px;
+      background: none;
+      border: none;
+      line-height: 1;
+    }
+
+    /* Actions */
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      opacity: .85;
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #334155;
+      color: #e2e8f0;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    /* Response */
+    .response-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .response-header {
+      padding: 12px 16px;
+      background: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .response-header .left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-pill {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-2xx {
+      background: #16a34a30;
+      color: #4ade80;
+      border: 1px solid #16a34a60;
+    }
+
+    .status-4xx {
+      background: #d9770630;
+      color: #fb923c;
+      border: 1px solid #d9770660;
+    }
+
+    .status-5xx {
+      background: #dc262630;
+      color: #f87171;
+      border: 1px solid #dc262660;
+    }
+
+    .status-0 {
+      background: #64748b30;
+      color: #94a3b8;
+      border: 1px solid #64748b60;
+    }
+
+    .response-time {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .response-body {
+      padding: 16px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    pre {
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .json-key {
+      color: #7dd3fc;
+    }
+
+    .json-str {
+      color: #86efac;
+    }
+
+    .json-num {
+      color: #fbbf24;
+    }
+
+    .json-bool {
+      color: #f472b6;
+    }
+
+    .json-null {
+      color: #94a3b8;
+    }
+
+    /* Security tab */
+    .security-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .security-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .security-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .security-card p,
+    .security-card li {
+      font-size: 12.5px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    .security-card ul {
+      padding-left: 16px;
+    }
+
+    .sev-high {
+      color: #f87171;
+    }
+
+    .sev-med {
+      color: #fb923c;
+    }
+
+    .sev-low {
+      color: #fbbf24;
+    }
+
+    .sev-ok {
+      color: #4ade80;
+    }
+
+    .icon-warn {
+      color: #f87171;
+    }
+
+    .icon-ok {
+      color: #4ade80;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      animation: slide-in .2s ease;
+      z-index: 999;
+    }
+
+    @keyframes slide-in {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Spinner */
+    .spin {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffffff40;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 12px;
+      }
+
+      .nav-item {
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 6px;
+        padding: 8px 12px;
+      }
+
+      .nav-item.active {
+        border-left-color: transparent;
+        border-bottom-color: #3b82f6;
+      }
+
+      .security-grid,
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-title">WBS API Tester</div>
+      <div class="nav-item active" onclick="showPanel('jenis-aduans')">
+        <span class="nav-badge badge-get">GET</span>
+        <span>Jenis Aduan</span>
+        <span class="nav-badge badge-pub" style="margin-left:auto">publik</span>
+      </div>
+      <div class="nav-item" onclick="showPanel('create-aduan')">
+        <span class="nav-badge badge-post">POST</span>
+        <span>Buat Aduan</span>
+      </div>
+      <div class="nav-item" onclick="showPanel('cek-status')">
+        <span class="nav-badge badge-post">POST</span>
+        <span>Cek Status</span>
+      </div>
+      <div class="nav-item" onclick="showPanel('security')">
+        <span style="font-size:16px">🔒</span>
+        <span>Audit Keamanan</span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- Config bar -->
+      <div class="config-bar">
+        <div class="field-url">
+          <label>Base URL</label>
+          <input type="text" id="base-url" value="http://wbs-v2.test/" placeholder="https://wbs.bontangkota.go.id">
+        </div>
+        <div class="field-key">
+          <label>X-API-Key</label>
+          <input type="text" id="api-key" value="sk_live_wbs_superapps_2026" placeholder="sk_live_...">
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PANEL 1: GET /api/jenis-aduans                               -->
+      <!-- ============================================================ -->
+      <div class="panel active" id="panel-jenis-aduans">
+        <h1>Jenis Aduan</h1>
+        <div class="endpoint-meta">
+          <span class="method-badge method-get">GET</span>
+          <span class="endpoint-url" id="url-jenis">/api/jenis-aduans</span>
+          <span class="auth-badge auth-pub">Tanpa Auth</span>
+        </div>
+        <p style="color:#94a3b8;font-size:13px;margin-bottom:20px">
+          Endpoint publik untuk mendapatkan daftar kategori laporan yang aktif.
+        </p>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="reqJenisAduans()" id="btn-jenis">
+            <span>Kirim Request</span>
+          </button>
+          <button class="btn btn-secondary" onclick="clearResponse('res-jenis')">Reset</button>
+        </div>
+
+        <div class="response-box" id="res-jenis">
+          <div class="response-header">
+            <div class="left">
+              <span>Response</span>
+              <span class="status-pill status-0" id="status-jenis">—</span>
+            </div>
+            <span class="response-time" id="time-jenis"></span>
+          </div>
+          <div class="response-body">
+            <pre id="body-jenis" style="color:#64748b">Belum ada request.</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PANEL 2: POST /api/aduans                                    -->
+      <!-- ============================================================ -->
+      <div class="panel" id="panel-create-aduan">
+        <h1>Buat Aduan</h1>
+        <div class="endpoint-meta">
+          <span class="method-badge method-post">POST</span>
+          <span class="endpoint-url" id="url-create">/api/aduans</span>
+          <span class="auth-badge auth-req">Perlu API Key</span>
+        </div>
+
+        <div class="section">
+          <div class="section-header">👤 Identitas Pelapor</div>
+          <div class="section-body">
+            <div class="field-row">
+              <div class="field">
+                <label>nama <span class="req">wajib</span></label>
+                <input type="text" id="c-nama" placeholder="Nama lengkap pelapor">
+              </div>
+              <div class="field">
+                <label>email <span class="req">wajib</span></label>
+                <input type="email" id="c-email" placeholder="pelapor@example.com">
+              </div>
+              <div class="field">
+                <label>phone</label>
+                <input type="text" id="c-phone" placeholder="081234567890">
+              </div>
+              <div class="field">
+                <label>nip</label>
+                <input type="text" id="c-nip" placeholder="NIP ASN (opsional)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">📋 Substansi Laporan</div>
+          <div class="section-body">
+            <div class="field-row">
+              <div class="field">
+                <label>jenis_aduan <span class="req">wajib</span></label>
+                <select id="c-jenis">
+                  <option value="">— Pilih atau ambil dari API —</option>
+                </select>
+                <span class="hint">Klik "Muat Jenis" untuk mengisi dari server</span>
+              </div>
+              <div class="field" style="justify-content:flex-end">
+                <button class="btn btn-secondary" onclick="loadJenisToSelect()" style="align-self:flex-end">⟳ Muat
+                  Jenis</button>
+              </div>
+            </div>
+            <div class="field full">
+              <label>identitas_terlapor <span class="req">wajib</span></label>
+              <textarea id="c-terlapor" rows="2" placeholder="Nama dan jabatan pihak yang dilaporkan"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">📅 Kronologis 5W+1H</div>
+          <div class="section-body">
+            <div class="field full">
+              <label>what <span class="req">wajib</span></label>
+              <textarea id="c-what" rows="3" placeholder="Apa yang terjadi? (min 20 karakter)"></textarea>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>who <span class="req">wajib</span></label>
+                <input type="text" id="c-who" placeholder="Siapa yang terlibat">
+              </div>
+              <div class="field">
+                <label>when_date <span class="req">wajib</span></label>
+                <input type="date" id="c-when">
+              </div>
+              <div class="field">
+                <label>where_location <span class="req">wajib</span></label>
+                <input type="text" id="c-where" placeholder="Lokasi kejadian">
+              </div>
+              <div class="field">
+                <label>lokasi_kejadian <span class="req">wajib</span></label>
+                <input type="text" id="c-lokasi" placeholder="Alamat lengkap">
+              </div>
+            </div>
+            <div class="field full">
+              <label>why</label>
+              <textarea id="c-why" rows="2" placeholder="Dugaan penyebab (opsional)"></textarea>
+            </div>
+            <div class="field full">
+              <label>how</label>
+              <textarea id="c-how" rows="2" placeholder="Urutan kronologis (opsional)"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">📎 Bukti Pendukung (opsional, maks 5 file × 10 MB)</div>
+          <div class="section-body">
+            <div class="file-drop" id="drop-zone" onclick="document.getElementById('file-input').click()"
+              ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')"
+              ondrop="handleDrop(event)">
+              <svg width="32" height="32" fill="none" stroke="#475569" stroke-width="1.5" viewBox="0 0 24 24"
+                style="margin:0 auto">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <p>Klik atau seret file ke sini</p>
+              <p>PDF, DOC, DOCX, JPG, PNG, WEBP — maks 10 MB/file</p>
+              <input type="file" id="file-input" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                style="display:none" onchange="addFiles(this.files)">
+            </div>
+            <div id="file-list"></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="reqCreateAduan()" id="btn-create">Kirim Request</button>
+          <button class="btn btn-secondary" onclick="fillDummy()">Isi Contoh</button>
+          <button class="btn btn-secondary" onclick="clearResponse('res-create')">Reset</button>
+        </div>
+
+        <div class="response-box" id="res-create">
+          <div class="response-header">
+            <div class="left">
+              <span>Response</span>
+              <span class="status-pill status-0" id="status-create">—</span>
+            </div>
+            <span class="response-time" id="time-create"></span>
+          </div>
+          <div class="response-body">
+            <pre id="body-create" style="color:#64748b">Belum ada request.</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PANEL 3: POST /api/aduans/status                             -->
+      <!-- ============================================================ -->
+      <div class="panel" id="panel-cek-status">
+        <h1>Cek Status Aduan</h1>
+        <div class="endpoint-meta">
+          <span class="method-badge method-post">POST</span>
+          <span class="endpoint-url">/api/aduans/status</span>
+          <span class="auth-badge auth-req">Perlu API Key</span>
+        </div>
+
+        <div class="section">
+          <div class="section-header">🔍 Parameter</div>
+          <div class="section-body">
+            <div class="field-row">
+              <div class="field">
+                <label>nomor_registrasi <span class="req">wajib</span></label>
+                <input type="text" id="s-nomor" placeholder="WBS-2026-00001">
+              </div>
+              <div class="field">
+                <label>tracking_password <span class="req">wajib</span></label>
+                <input type="text" id="s-password" placeholder="Ab3xK9pQ">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" onclick="reqCekStatus()" id="btn-status">Kirim Request</button>
+          <button class="btn btn-secondary" onclick="autoFillFromCreate()">⟵ Isi dari hasil Buat Aduan</button>
+          <button class="btn btn-secondary" onclick="clearResponse('res-status')">Reset</button>
+        </div>
+
+        <div class="response-box" id="res-status">
+          <div class="response-header">
+            <div class="left">
+              <span>Response</span>
+              <span class="status-pill status-0" id="status-status">—</span>
+            </div>
+            <span class="response-time" id="time-status"></span>
+          </div>
+          <div class="response-body">
+            <pre id="body-status" style="color:#64748b">Belum ada request.</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PANEL 4: AUDIT KEAMANAN                                      -->
+      <!-- ============================================================ -->
+      <div class="panel" id="panel-security">
+        <h1>Audit Keamanan API</h1>
+        <p style="color:#94a3b8;font-size:13px;margin-bottom:24px">
+          Hasil analisis statis kode sumber — <code style="color:#60a5fa">app/Http/Middleware/ApiKeyAuth.php</code>,
+          <code style="color:#60a5fa">app/Http/Controllers/Api/AduanController.php</code>,
+          <code style="color:#60a5fa">routes/api.php</code>
+        </p>
+
+        <div class="security-grid">
+
+          <div class="security-card" style="border-color:#7f1d1d50">
+            <h3><span class="icon-warn">🔴</span> <span class="sev-high">HIGH — API Key Hardcoded</span></h3>
+            <p>API key <code style="color:#fb923c">sk_live_wbs_superapps_2026</code> ter-hardcode langsung di source
+              code <code>ApiKeyAuth.php:14</code> dan juga terekspos di <code>API_DOCUMENTATION.md</code>. Siapapun yang
+              membaca kode atau dokumentasi bisa menggunakan key ini.</p>
+            <ul style="margin-top:8px">
+              <li>Pindahkan ke <code>.env</code>: <code>SUPERAPPS_API_KEY=...</code></li>
+              <li>Hapus fallback hardcoded — hanya gunakan <code>config()</code></li>
+              <li>Rotasi key sekarang jika sudah pernah di-commit ke git</li>
+            </ul>
+          </div>
+
+          <div class="security-card" style="border-color:#7f1d1d50">
+            <h3><span class="icon-warn">🔴</span> <span class="sev-high">HIGH — Timing Attack pada Validasi Key</span>
+            </h3>
+            <p><code>in_array($apiKey, $validKeys)</code> rentan timing attack — penyerang bisa mengukur perbedaan waktu
+              respons untuk menebak karakter API key satu per satu.</p>
+            <ul style="margin-top:8px">
+              <li>Ganti dengan <code>hash_equals()</code>:<br>
+                <code style="color:#86efac">hash_equals($validKey, $apiKey)</code>
+              </li>
+            </ul>
+          </div>
+
+          <div class="security-card" style="border-color:#78350f50">
+            <h3><span class="icon-warn">🟠</span> <span class="sev-med">MEDIUM — Tidak Ada Rate Limiting di API</span>
+            </h3>
+            <p>Tidak ada throttle middleware pada route API. Endpoint <code>POST /api/aduans/status</code> bisa di-brute
+              force untuk menebak tracking_password. Endpoint <code>POST /api/aduans</code> bisa di-spam untuk flooding
+              database.</p>
+            <ul style="margin-top:8px">
+              <li>Tambahkan di <code>routes/api.php</code>: <code>->middleware('throttle:60,1')</code></li>
+              <li>Untuk <code>/status</code>: batasi lebih ketat, misal <code>throttle:20,1</code></li>
+            </ul>
+          </div>
+
+          <div class="security-card" style="border-color:#78350f50">
+            <h3><span class="icon-warn">🟠</span> <span class="sev-med">MEDIUM — Error Detail Bocor ke Client</span>
+            </h3>
+            <p>Saat <code>APP_DEBUG=true</code>, response 500 menyertakan <code>$e->getMessage()</code> yang bisa
+              mengekspos nama tabel, path file, atau query database.</p>
+            <pre
+              style="background:#0f172a;padding:8px;border-radius:4px;margin-top:6px;font-size:11px">'error' => config('app.debug') ? $e->getMessage() : null</pre>
+            <p style="margin-top:6px">Pastikan <code>APP_DEBUG=false</code> di production, dan pertimbangkan menghapus
+              conditional ini sepenuhnya.</p>
+          </div>
+
+          <div class="security-card" style="border-color:#78350f50">
+            <h3><span class="icon-warn">🟠</span> <span class="sev-med">MEDIUM — Endpoint Publik Tanpa Rate Limit</span>
+            </h3>
+            <p><code>GET /api/jenis-aduans</code> tidak memerlukan auth dan tidak ada throttle. Bisa dieksploitasi untuk
+              scraping atau DDoS kecil-kecilan karena melakukan query DB setiap request.</p>
+            <ul style="margin-top:8px">
+              <li>Tambahkan <code>throttle:120,1</code></li>
+              <li>Respons sudah dari cache (<code>JenisAduan::active()</code>) — bagus, tapi rate limit tetap perlu</li>
+            </ul>
+          </div>
+
+          <div class="security-card" style="border-color:#78350f50">
+            <h3><span class="icon-warn">🟡</span> <span class="sev-low">LOW — MIME Type Bocor di Error Message</span>
+            </h3>
+            <p><code>FileValidationService.php:79</code> menyertakan MIME type aktual di pesan error:</p>
+            <pre
+              style="background:#0f172a;padding:8px;border-radius:4px;margin-top:6px;font-size:11px">'Tipe file tidak diizinkan. MIME type: ' . $realMimeType</pre>
+            <p style="margin-top:6px">Memberi informasi kepada penyerang tentang tipe file apa yang diblokir dan
+              bagaimana cara melewatinya.</p>
+          </div>
+
+          <div class="security-card" style="border-color:#78350f50">
+            <h3><span class="icon-warn">🟡</span> <span class="sev-low">LOW — Tidak Ada Log Gagal Autentikasi</span>
+            </h3>
+            <p>Request dengan API key yang salah langsung ditolak tanpa dicatat ke log. Aktivitas mencurigakan
+              (percobaan brute force key) tidak terdeteksi.</p>
+            <ul style="margin-top:8px">
+              <li>Tambahkan <code>Log::warning()</code> saat key tidak valid beserta IP address-nya</li>
+            </ul>
+          </div>
+
+          <div class="security-card" style="border-color:#166534">
+            <h3><span class="icon-ok">✅</span> <span class="sev-ok">BAIK — Yang Sudah Aman</span></h3>
+            <ul>
+              <li>Semua query pakai Eloquent ORM — tidak ada SQL injection</li>
+              <li>Validasi input lengkap dengan <code>$request->validate()</code></li>
+              <li>File divalidasi berdasarkan konten MIME (bukan ekstensi)</li>
+              <li>Transaksi DB dengan rollback saat error</li>
+              <li>File upload disimpan di <code>public</code> disk dengan nama unik</li>
+              <li>tracking_password di-hash dengan bcrypt</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div class="section" style="margin-top:8px">
+          <div class="section-header">⚡ Quick Test Keamanan</div>
+          <div class="section-body">
+            <p style="font-size:13px;color:#94a3b8;margin-bottom:12px">Uji beberapa skenario dari sini langsung:</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-secondary" onclick="testNoKey()">Test: Tanpa API Key</button>
+              <button class="btn btn-secondary" onclick="testWrongKey()">Test: Key Salah</button>
+              <button class="btn btn-secondary" onclick="testPublicEndpoint()">Test: Endpoint Publik</button>
+              <button class="btn btn-secondary" onclick="testInvalidStatus()">Test: Status Salah</button>
+            </div>
+            <div class="response-box" id="res-security" style="margin-top:16px">
+              <div class="response-header">
+                <div class="left">
+                  <span>Response</span>
+                  <span class="status-pill status-0" id="status-security">—</span>
+                </div>
+                <span class="response-time" id="time-security"></span>
+              </div>
+              <div class="response-body">
+                <pre id="body-security" style="color:#64748b">Belum ada request.</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" style="display:none"></div>
+
+  <script>
+    // ─── State ────────────────────────────────────────────────────────────
+    let selectedFiles = [];
+    let lastCreateResponse = null;
+
+    // ─── Navigation ───────────────────────────────────────────────────────
+    function showPanel(name) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+      event.currentTarget.classList.add('active');
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────
+    function getBase() {
+      return document.getElementById('base-url').value.replace(/\/$/, '');
+    }
+    function getKey() {
+      return document.getElementById('api-key').value;
+    }
+
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      if (loading) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spin"></span> Mengirim...';
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.label || 'Kirim Request';
+      }
+    }
+
+    function showResponse(prefix, status, body, ms) {
+      const statusEl = document.getElementById('status-' + prefix);
+      const bodyEl = document.getElementById('body-' + prefix);
+      const timeEl = document.getElementById('time-' + prefix);
+
+      const cls = status === 0 ? 'status-0' : status >= 500 ? 'status-5xx' : status >= 400 ? 'status-4xx' : 'status-2xx';
+      statusEl.className = 'status-pill ' + cls;
+      statusEl.textContent = status === 0 ? 'Error' : status;
+      timeEl.textContent = ms ? ms + ' ms' : '';
+
+      try {
+        const obj = typeof body === 'string' ? JSON.parse(body) : body;
+        bodyEl.innerHTML = syntaxHighlight(JSON.stringify(obj, null, 2));
+      } catch {
+        bodyEl.textContent = body;
+      }
+    }
+
+    function clearResponse(id) {
+      const box = document.getElementById(id);
+      box.querySelector('[id^="status-"]').className = 'status-pill status-0';
+      box.querySelector('[id^="status-"]').textContent = '—';
+      box.querySelector('[id^="time-"]').textContent = '';
+      box.querySelector('pre').textContent = 'Belum ada request.';
+      box.querySelector('pre').style.color = '#64748b';
+    }
+
+    function syntaxHighlight(json) {
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) return `<span class="json-key">${match}</span>`;
+          return `<span class="json-str">${match}</span>`;
+        }
+        if (/true|false/.test(match)) return `<span class="json-bool">${match}</span>`;
+        if (/null/.test(match)) return `<span class="json-null">${match}</span>`;
+        return `<span class="json-num">${match}</span>`;
+      });
+    }
+
+    function toast(msg, ms = 2500) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', ms);
+    }
+
+    async function sendRequest(method, url, headers = {}, body = null) {
+      const t0 = performance.now();
+      try {
+        const opts = { method, headers };
+        if (body) opts.body = body;
+        const res = await fetch(url, opts);
+        const ms = Math.round(performance.now() - t0);
+        const text = await res.text();
+        return { status: res.status, body: text, ms };
+      } catch (e) {
+        return { status: 0, body: 'Network error: ' + e.message, ms: Math.round(performance.now() - t0) };
+      }
+    }
+
+    // ─── Panel 1: GET /api/jenis-aduans ──────────────────────────────────
+    async function reqJenisAduans() {
+      document.getElementById('btn-jenis').dataset.label = 'Kirim Request';
+      setLoading('btn-jenis', true);
+      const r = await sendRequest('GET', getBase() + '/api/jenis-aduans');
+      setLoading('btn-jenis', false);
+      showResponse('jenis', r.status, r.body, r.ms);
+    }
+
+    async function loadJenisToSelect() {
+      const r = await sendRequest('GET', getBase() + '/api/jenis-aduans');
+      try {
+        const data = JSON.parse(r.body);
+        const sel = document.getElementById('c-jenis');
+        sel.innerHTML = '<option value="">— Pilih kategori —</option>';
+        (data.data || []).forEach(j => {
+          sel.innerHTML += `<option value="${j.slug}">${j.name}</option>`;
+        });
+        toast('✓ ' + (data.data || []).length + ' kategori dimuat');
+      } catch {
+        toast('Gagal memuat jenis aduan');
+      }
+    }
+
+    // ─── Panel 2: POST /api/aduans ────────────────────────────────────────
+    function addFiles(files) {
+      for (const f of files) {
+        if (selectedFiles.length >= 5) { toast('Maks 5 file'); break; }
+        if (f.size > 10 * 1024 * 1024) { toast('File > 10 MB: ' + f.name); continue; }
+        if (!selectedFiles.find(x => x.name === f.name && x.size === f.size)) {
+          selectedFiles.push(f);
+        }
+      }
+      renderFileList();
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('drop-zone').classList.remove('drag');
+      addFiles(e.dataTransfer.files);
+    }
+
+    function renderFileList() {
+      const el = document.getElementById('file-list');
+      el.innerHTML = selectedFiles.map((f, i) => `
+    <div class="file-item">
+      <div>📎 <strong>${f.name}</strong><span>${(f.size / 1024).toFixed(1)} KB</span></div>
+      <button class="file-remove" onclick="removeFile(${i})">×</button>
+    </div>`).join('');
+    }
+
+    function removeFile(i) {
+      selectedFiles.splice(i, 1);
+      renderFileList();
+    }
+
+    function fillDummy() {
+      document.getElementById('c-nama').value = 'Budi Santoso';
+      document.getElementById('c-email').value = 'budi.test@example.com';
+      document.getElementById('c-phone').value = '081234567890';
+      document.getElementById('c-terlapor').value = 'Kepala Bagian Pengadaan, Dinas XYZ';
+      document.getElementById('c-what').value = 'Terjadi dugaan pengadaan fiktif senilai Rp 200 juta pada proyek renovasi kantor yang tidak sesuai dengan spesifikasi kontrak.';
+      document.getElementById('c-who').value = 'Kepala Bagian Pengadaan beserta staf terkait';
+      document.getElementById('c-when').value = new Date().toISOString().split('T')[0];
+      document.getElementById('c-where').value = 'Kantor Dinas XYZ, Lantai 2';
+      document.getElementById('c-lokasi').value = 'Jl. Contoh No. 123, Bontang';
+      document.getElementById('c-why').value = 'Diduga untuk kepentingan pribadi dan kelompok';
+      document.getElementById('c-how').value = 'Kronologis: pertama dilakukan penunjukan langsung tanpa tender, kemudian dokumen pengadaan dimanipulasi...';
+      toast('✓ Form diisi dengan data contoh');
+    }
+
+    async function reqCreateAduan() {
+      document.getElementById('btn-create').dataset.label = 'Kirim Request';
+      setLoading('btn-create', true);
+
+      const fd = new FormData();
+      const fields = {
+        nama: 'c-nama', email: 'c-email', phone: 'c-phone', nip: 'c-nip',
+        jenis_aduan: 'c-jenis', identitas_terlapor: 'c-terlapor',
+        what: 'c-what', who: 'c-who', when_date: 'c-when',
+        where_location: 'c-where', lokasi_kejadian: 'c-lokasi',
+        why: 'c-why', how: 'c-how'
+      };
+
+      for (const [key, id] of Object.entries(fields)) {
+        const val = document.getElementById(id).value.trim();
+        if (val) fd.append(key, val);
+      }
+
+      selectedFiles.forEach(f => fd.append('file_bukti[]', f));
+
+      const r = await sendRequest('POST', getBase() + '/api/aduans', { 'X-API-Key': getKey() }, fd);
+      setLoading('btn-create', false);
+      showResponse('create', r.status, r.body, r.ms);
+
+      try {
+        lastCreateResponse = JSON.parse(r.body);
+      } catch { lastCreateResponse = null; }
+    }
+
+    // ─── Panel 3: POST /api/aduans/status ────────────────────────────────
+    function autoFillFromCreate() {
+      if (lastCreateResponse?.data?.nomor_registrasi) {
+        document.getElementById('s-nomor').value = lastCreateResponse.data.nomor_registrasi;
+        document.getElementById('s-password').value = lastCreateResponse.data.tracking_password || '';
+        toast('✓ Nomor & password diisi dari response sebelumnya');
+      } else {
+        toast('Belum ada response dari Buat Aduan');
+      }
+    }
+
+    async function reqCekStatus() {
+      document.getElementById('btn-status').dataset.label = 'Kirim Request';
+      setLoading('btn-status', true);
+
+      const body = JSON.stringify({
+        nomor_registrasi: document.getElementById('s-nomor').value.trim(),
+        tracking_password: document.getElementById('s-password').value.trim(),
+      });
+
+      const r = await sendRequest('POST', getBase() + '/api/aduans/status', {
+        'X-API-Key': getKey(),
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      }, body);
+
+      setLoading('btn-status', false);
+      showResponse('status', r.status, r.body, r.ms);
+    }
+
+    // ─── Panel 4: Quick Security Tests ───────────────────────────────────
+    async function securityTest(method, url, headers, body, label) {
+      document.getElementById('body-security').style.color = '';
+      document.getElementById('body-security').textContent = `→ ${label}...`;
+      const r = await sendRequest(method, url, headers, body);
+      showResponse('security', r.status, r.body, r.ms);
+    }
+
+    function testNoKey() {
+      securityTest('POST', getBase() + '/api/aduans', { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        JSON.stringify({ email: 'test@test.com' }), 'POST /api/aduans tanpa X-API-Key');
+    }
+    function testWrongKey() {
+      securityTest('POST', getBase() + '/api/aduans', { 'X-API-Key': 'wrong_key_12345', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        JSON.stringify({ email: 'test@test.com' }), 'POST /api/aduans dengan key salah');
+    }
+    function testPublicEndpoint() {
+      securityTest('GET', getBase() + '/api/jenis-aduans', { 'Accept': 'application/json' }, null, 'GET /api/jenis-aduans tanpa auth');
+    }
+    function testInvalidStatus() {
+      securityTest('POST', getBase() + '/api/aduans/status', {
+        'X-API-Key': getKey(), 'Content-Type': 'application/json', 'Accept': 'application/json'
+      }, JSON.stringify({ nomor_registrasi: 'WBS-9999-99999', tracking_password: 'wrongpwd' }), 'POST /api/aduans/status dengan data tidak valid');
+    }
+
+    // ─── Update URL preview ───────────────────────────────────────────────
+    document.getElementById('base-url').addEventListener('input', () => {
+      const base = document.getElementById('base-url').value.replace(/\/$/, '');
+      document.getElementById('url-jenis').textContent = base + '/api/jenis-aduans';
+      document.getElementById('url-create').textContent = base + '/api/aduans';
+    });
+  </script>
+</body>
+
+</html>

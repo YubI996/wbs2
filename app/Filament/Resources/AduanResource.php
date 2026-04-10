@@ -149,6 +149,9 @@ class AduanResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordClasses(fn (Aduan $record) => in_array($record->status, [AduanStatus::SELESAI, AduanStatus::DITOLAK])
+                ? 'opacity-60'
+                : null)
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
@@ -323,6 +326,7 @@ class AduanResource extends Resource
             ->with(['pelapor', 'user', 'jenisAduan']) // Eager loading for performance
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
-            ]);
+            ])
+            ->orderByRaw("CASE WHEN status IN ('selesai', 'ditolak') THEN 1 ELSE 0 END ASC");
     }
 }

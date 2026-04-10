@@ -72,6 +72,9 @@ class AduanResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordClasses(fn (Aduan $record) => $record->status === AduanStatus::SELESAI
+                ? 'opacity-60'
+                : null)
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
@@ -192,6 +195,13 @@ class AduanResource extends Resource
             ]);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\AduanResource\RelationManagers\BuktiPendukungsRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
@@ -208,6 +218,7 @@ class AduanResource extends Resource
                 AduanStatus::PROSES,
                 AduanStatus::INVESTIGASI,
                 AduanStatus::SELESAI,
-            ]);
+            ])
+            ->orderByRaw("CASE WHEN status = 'selesai' THEN 1 ELSE 0 END ASC");
     }
 }

@@ -75,7 +75,7 @@ class BuatLaporanWizard extends Component
         return match($this->step) {
             1 => [
                 'nama' => 'required|string|max:255',
-                'phone' => 'required|string|max:20',
+                'phone' => 'required|digits_between:8,15',
                 'email' => $this->notify_email ? 'required|email|max:255' : 'nullable|email|max:255',
                 'is_anonim' => 'boolean',
                 'notify_email' => 'boolean',
@@ -108,6 +108,7 @@ class BuatLaporanWizard extends Component
         return [
             'nama.required' => 'Nama lengkap wajib diisi',
             'phone.required' => 'Nomor handphone wajib diisi',
+            'phone.digits_between' => 'Nomor handphone harus berupa angka antara 8-15 digit',
             'email.required' => 'Email wajib diisi jika ingin menerima notifikasi',
             'email.email' => 'Format email tidak valid',
             'jenis_aduan_id.required' => 'Kategori laporan wajib dipilih',

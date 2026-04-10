@@ -169,7 +169,8 @@
                             
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">No. Handphone <span class="text-red-500">*</span></label>
-                                <input type="tel" id="phone" wire:model="phone" 
+                                <input type="tel" id="phone" wire:model="phone"
+                                       inputmode="numeric" pattern="[0-9]*"
                                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                        placeholder="08xxxxxxxxxx">
                                 @error('phone') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror

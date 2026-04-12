@@ -38,7 +38,7 @@ class StatistikController extends Controller
             return [
                 'ringkasan'           => $this->getRingkasan($tahun),
                 'per_status'          => $this->getPerStatus(),
-                'per_channel'         => $this->getPerChannel(),
+                // 'per_channel'         => $this->getPerChannel(),
                 'per_jenis_aduan'     => $this->getPerJenisAduan(),
                 'tingkat_penyelesaian'=> $this->getTingkatPenyelesaian(),
                 'trend_bulanan'       => $this->getTrendBulanan($bulanTrend),

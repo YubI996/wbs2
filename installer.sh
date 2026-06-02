@@ -1,228 +1,198 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # ============================================================
 # WBS v2 - Server Deployment Installer
-# Untuk: wbs.atletik.biz.id
+# ------------------------------------------------------------
+# Pola server (Debian + KVM):
+#   - Container HTTP aplikasi hanya bind ke 127.0.0.1:<APP_PORT>
+#     (loopback VM, tidak terekspos ke jaringan luar).
+#   - Apache2 di host = reverse proxy, satu VirtualHost per
+#     subdomain, meneruskan ke 127.0.0.1:<APP_PORT>.
+#   - Multi-app: tiap aplikasi pakai port + subdomain berbeda,
+#     cukup satu pintu masuk (Apache) untuk semua container.
 # ============================================================
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# ---------- Konfigurasi (sesuaikan per aplikasi) ----------
+DOMAIN="devapps-wbs.bontangkota.go.id"   # ServerName VirtualHost (& APP_URL)
+APP_PORT="8003"                          # Port loopback container — HARUS UNIK antar app
+APP_SCHEME="http"                        # http | https (skema publik; lihat blok HTTPS di bawah)
 
-# Configuration
-PROJECT_DIR="/var/www/wbs"
-PROXY_DIR="/home/prasasti/proxy"
-DOMAIN="wbs.atletik.biz.id"
-SSL_SRC="/home/prasasti/SSLBARU/wbs.ssl"
-DOCKER_NETWORK="wbs_wbs-network"
-PROXY_CONTAINER="nginx-proxy"
+# Direktori proyek = lokasi script ini berada (hasil git clone)
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APACHE_SITES_DIR="/etc/apache2/sites-available"
+APACHE_CONF="${APACHE_SITES_DIR}/${DOMAIN}.conf"
+
+# ---------- Tampilan ----------
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+log()  { echo -e "${BLUE}$*${NC}"; }
+ok()   { echo -e "${GREEN}✓ $*${NC}"; }
+warn() { echo -e "${YELLOW}! $*${NC}"; }
+err()  { echo -e "${RED}ERROR: $*${NC}"; }
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}WBS v2 - Server Deployment Setup${NC}"
-echo -e "${BLUE}Domain: $DOMAIN${NC}"
+echo -e "${BLUE} WBS v2 - Deploy (Apache reverse proxy)${NC}"
+echo -e "${BLUE} Domain   : ${DOMAIN}${NC}"
+echo -e "${BLUE} Upstream : 127.0.0.1:${APP_PORT}${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
+# ---------- [0] Prasyarat ----------
+command -v docker >/dev/null 2>&1 || { err "docker tidak ditemukan"; exit 1; }
+docker compose version >/dev/null 2>&1 || { err "plugin 'docker compose' tidak tersedia"; exit 1; }
+command -v apache2ctl >/dev/null 2>&1 || command -v apachectl >/dev/null 2>&1 \
+    || { err "Apache2 tidak ditemukan (apache2ctl/apachectl)"; exit 1; }
+
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+    SUDO="sudo"
+    warn "Bukan root — perintah Apache/systemd akan memakai sudo"
+fi
+
+cd "$PROJECT_DIR"
+
 # ============================================================
-# [1/7] Check .env file
+# [1/6] Cek file .env
 # ============================================================
-echo -e "${YELLOW}[1/7]${NC} Checking .env configuration..."
+log "[1/6] Cek konfigurasi .env ..."
 if [ ! -f "$PROJECT_DIR/.env" ]; then
-    if [ ! -f "$PROJECT_DIR/.env.example" ]; then
-        echo -e "${RED}ERROR: .env.example not found in $PROJECT_DIR${NC}"
-        exit 1
-    fi
-
-    echo -e "${YELLOW}>>> Copying .env.example to .env${NC}"
+    [ -f "$PROJECT_DIR/.env.example" ] || { err ".env.example tidak ada di $PROJECT_DIR"; exit 1; }
     cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
-
-    echo -e "${YELLOW}>>> Please edit $PROJECT_DIR/.env with your production values:${NC}"
-    echo "  - DB_PASSWORD (strong password)"
-    echo "  - DB_ROOT_PASSWORD (strong password)"
-    echo "  - RECAPTCHA_SITE_KEY"
-    echo "  - RECAPTCHA_SECRET_KEY"
-    echo "  - MAIL_* settings if needed"
-    echo ""
-    echo -e "${RED}ERROR: Please configure .env and run this script again${NC}"
+    warn ".env dibuat dari .env.example. Lengkapi nilai berikut, lalu jalankan ulang script ini:"
+    echo "   - APP_PORT=${APP_PORT}   (samakan dengan port di atas)"
+    echo "   - APP_URL=${APP_SCHEME}://${DOMAIN}"
+    echo "   - DB_PASSWORD, DB_ROOT_PASSWORD  (password kuat)"
+    echo "   - RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY"
+    echo "   - WBS_API_KEY, MAIL_*  (bila perlu)"
+    err "Edit $PROJECT_DIR/.env lalu jalankan lagi: ./installer.sh"
     exit 1
 fi
-echo -e "${GREEN}✓ .env file exists${NC}"
+ok ".env tersedia"
 echo ""
 
 # ============================================================
-# [2/7] Build and start Docker containers
+# [2/6] Build image + dependency + aset frontend
+#       (tanpa perlu PHP/Composer/Node terpasang di host)
 # ============================================================
-echo -e "${YELLOW}[2/7]${NC} Building and starting Docker containers..."
-cd "$PROJECT_DIR"
-docker compose up -d --build
-echo -e "${GREEN}✓ Containers started${NC}"
+log "[2/6] Build image, dependency, dan aset ..."
+docker compose build
+
+# Composer (pakai image composer resmi; --ignore-platform-reqs karena ekstensi
+# PHP runtime ada di image app, bukan di image composer). Tulis ke bind-mount host.
+docker run --rm -v "$PROJECT_DIR":/var/www -w /var/www composer:2 \
+    install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs
+ok "Composer dependencies terpasang (vendor/)"
+
+# Aset Vite (pakai container Node sekali pakai) -> public/build
+docker run --rm -v "$PROJECT_DIR":/var/www -w /var/www node:20-alpine \
+    sh -c "npm ci && npm run build"
+ok "Aset frontend ter-build (public/build/)"
 echo ""
 
-# Wait for app to be ready
-echo -e "${YELLOW}    Waiting for application to be ready...${NC}"
+# ============================================================
+# [3/6] Jalankan containers
+# ============================================================
+log "[3/6] Menjalankan containers ..."
+docker compose up -d
+ok "Containers berjalan"
+log "    Menunggu database & aplikasi siap ..."
 sleep 10
 echo ""
 
 # ============================================================
-# [3/7] Install dependencies and setup application
+# [4/6] Setup aplikasi Laravel
 # ============================================================
-echo -e "${YELLOW}[3/7]${NC} Installing dependencies and running migrations..."
+log "[4/6] Setup aplikasi (key, migrate, cache) ..."
 
-echo -e "${YELLOW}    Installing Composer dependencies...${NC}"
-docker exec wbs-app composer install --no-dev --optimize-autoloader
+# Generate APP_KEY hanya bila belum ada (idempoten — aman dijalankan ulang)
+if ! grep -qE '^APP_KEY=base64:' "$PROJECT_DIR/.env"; then
+    docker exec wbs-app php artisan key:generate --force
+fi
 
-echo -e "${YELLOW}    Generating APP_KEY...${NC}"
-docker exec wbs-app php artisan key:generate --force
-
-echo -e "${YELLOW}    Running database migrations...${NC}"
+docker exec wbs-app php artisan storage:link        || true
+docker exec wbs-app php artisan package:discover     --ansi || true
 docker exec wbs-app php artisan migrate --force
-
-echo -e "${YELLOW}    Caching configuration...${NC}"
+docker exec wbs-app php artisan filament:assets      || true
 docker exec wbs-app php artisan config:cache
 docker exec wbs-app php artisan route:cache
 docker exec wbs-app php artisan view:cache
+docker exec wbs-app php artisan filament:upgrade     || true
 
-echo -e "${GREEN}✓ Application setup complete${NC}"
+# Restart agar php-fpm memuat config/opcache terbaru
+docker compose restart app queue
+ok "Aplikasi siap"
 echo ""
 
 # ============================================================
-# [4/7] Copy SSL certificates
+# [5/6] Buat VirtualHost Apache
 # ============================================================
-echo -e "${YELLOW}[4/7]${NC} Installing SSL certificates..."
+log "[5/6] Membuat VirtualHost Apache ..."
+$SUDO a2enmod proxy proxy_http headers rewrite >/dev/null 2>&1 || true
 
-SSL_DIR="$PROXY_DIR/ssl/$DOMAIN"
-mkdir -p "$SSL_DIR"
+$SUDO tee "$APACHE_CONF" >/dev/null << EOF
+# ${DOMAIN}  ->  http://127.0.0.1:${APP_PORT}  (container WBS v2 / wbs-nginx)
+# Dibuat otomatis oleh installer.sh.
+# Pola multi-app: satu VirtualHost per subdomain, satu Apache untuk banyak container.
+<VirtualHost *:80>
+    ServerName ${DOMAIN}
 
-if [ ! -f "$SSL_SRC/certificate.crt" ] || [ ! -f "$SSL_SRC/private.crt" ]; then
-    echo -e "${RED}ERROR: SSL certificates not found in $SSL_SRC${NC}"
-    echo "Expected files:"
-    echo "  - $SSL_SRC/certificate.crt"
-    echo "  - $SSL_SRC/private.crt"
-    exit 1
-fi
+    ProxyPreserveHost On
+    ProxyRequests Off
 
-cp "$SSL_SRC/certificate.crt" "$SSL_DIR/fullchain.pem"
-cp "$SSL_SRC/private.crt"     "$SSL_DIR/privkey.pem"
-chmod 644 "$SSL_DIR/fullchain.pem"
-chmod 600 "$SSL_DIR/privkey.pem"
+    # Teruskan skema ke Laravel (dibaca oleh TrustProxies di bootstrap/app.php).
+    # Bila TLS diterminasi di layer luar (gateway HTTPS), ubah "http" -> "https".
+    RequestHeader set X-Forwarded-Proto "${APP_SCHEME}"
 
-echo -e "${GREEN}✓ SSL certificates installed to $SSL_DIR${NC}"
-echo ""
+    ProxyPass        / http://127.0.0.1:${APP_PORT}/ retry=0
+    ProxyPassReverse / http://127.0.0.1:${APP_PORT}/
 
-# ============================================================
-# [5/7] Create nginx proxy configuration
-# ============================================================
-echo -e "${YELLOW}[5/7]${NC} Creating nginx proxy configuration..."
+    ErrorLog  \${APACHE_LOG_DIR}/${DOMAIN}-error.log
+    CustomLog \${APACHE_LOG_DIR}/${DOMAIN}-access.log combined
+</VirtualHost>
 
-PROXY_CONFIG="$PROXY_DIR/nginx/conf.d/$DOMAIN.conf"
-mkdir -p "$PROXY_DIR/nginx/conf.d"
-
-cat > "$PROXY_CONFIG" << 'EOF'
-# Redirect HTTP to HTTPS
-server {
-    listen 80;
-    server_name wbs.atletik.biz.id;
-    return 301 https://$host$request_uri;
-}
-
-# HTTPS server
-server {
-    listen 443 ssl;
-    server_name wbs.atletik.biz.id;
-
-    # SSL certificates
-    ssl_certificate     /etc/nginx/ssl/wbs.atletik.biz.id/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/wbs.atletik.biz.id/privkey.pem;
-
-    # SSL configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
-
-    # Security headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-
-    # Proxy to local container
-    location / {
-        proxy_pass         http://wbs-nginx:80;
-        proxy_http_version 1.1;
-        proxy_set_header   Host              $host;
-        proxy_set_header   X-Real-IP         $remote_addr;
-        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto https;
-        proxy_set_header   X-Forwarded-Host  $host;
-        proxy_set_header   X-Forwarded-Port  443;
-        proxy_set_header   Upgrade           $http_upgrade;
-        proxy_set_header   Connection        "upgrade";
-        proxy_read_timeout 90;
-        proxy_send_timeout 90;
-    }
-}
+# ------------------------------------------------------------------
+# CONTOH HTTPS (aktifkan setelah punya sertifikat):
+#   1) sudo a2enmod ssl
+#   2) Let's Encrypt:  sudo certbot --apache -d ${DOMAIN}
+#      (certbot membuat blok :443 + redirect :80 -> :443 otomatis)
+#   3) Pada blok :443, set  RequestHeader set X-Forwarded-Proto "https"
+#      dan ubah APP_URL=https://${DOMAIN} di .env, lalu:
+#      docker exec wbs-app php artisan config:cache
+# ------------------------------------------------------------------
 EOF
 
-echo -e "${GREEN}✓ Proxy configuration created at $PROXY_CONFIG${NC}"
+$SUDO a2ensite "${DOMAIN}.conf" >/dev/null 2>&1 || true
+ok "VirtualHost dibuat: $APACHE_CONF"
 echo ""
 
 # ============================================================
-# [6/7] Connect Docker network to proxy
+# [6/6] Test konfigurasi & reload Apache
 # ============================================================
-echo -e "${YELLOW}[6/7]${NC} Connecting Docker network to proxy..."
-
-# Check if proxy container is running
-if ! docker ps | grep -q "$PROXY_CONTAINER"; then
-    echo -e "${RED}WARNING: Proxy container '$PROXY_CONTAINER' is not running${NC}"
-    echo "Please ensure nginx-proxy container is running in $PROXY_DIR"
+log "[6/6] Test konfigurasi & reload Apache ..."
+if $SUDO apache2ctl configtest; then
+    $SUDO systemctl reload apache2 2>/dev/null || $SUDO apache2ctl -k graceful
+    ok "Apache di-reload"
 else
-    # Connect network if not already connected
-    docker network connect "$DOCKER_NETWORK" "$PROXY_CONTAINER" 2>/dev/null || true
-    echo -e "${GREEN}✓ Docker network connected to proxy${NC}"
+    err "Konfigurasi Apache tidak valid — perbaiki lalu jalankan: $SUDO systemctl reload apache2"
+    exit 1
 fi
-
 echo ""
 
-# ============================================================
-# [7/7] Reload proxy nginx
-# ============================================================
-echo -e "${YELLOW}[7/7]${NC} Reloading proxy nginx configuration..."
-
-if docker exec "$PROXY_CONTAINER" nginx -t 2>/dev/null; then
-    docker exec "$PROXY_CONTAINER" nginx -s reload
-    echo -e "${GREEN}✓ Proxy nginx reloaded${NC}"
-else
-    echo -e "${YELLOW}WARNING: Could not reload proxy nginx${NC}"
-    echo "Please manually reload: docker exec $PROXY_CONTAINER nginx -s reload"
-fi
-
-echo ""
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}[OK] WBS v2 deployment complete!${NC}"
+echo -e "${GREEN}[OK] Deploy WBS v2 selesai!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo "Next steps:"
-echo "1. Test the application:"
-echo -e "   ${BLUE}curl -I https://$DOMAIN${NC}"
+echo "Akses     : ${APP_SCHEME}://${DOMAIN}"
+echo "Upstream  : 127.0.0.1:${APP_PORT}  (container wbs-nginx)"
 echo ""
-echo "2. Check logs:"
-echo -e "   ${BLUE}docker logs -f wbs-app${NC}"
-echo -e "   ${BLUE}docker logs -f wbs-nginx${NC}"
+echo "Cek cepat :"
+echo -e "   ${BLUE}curl -I http://127.0.0.1:${APP_PORT}${NC}                       # langsung ke container"
+echo -e "   ${BLUE}curl -I -H 'Host: ${DOMAIN}' http://127.0.0.1${NC}   # via Apache"
 echo ""
-echo "3. Access the application:"
-echo -e "   ${BLUE}https://$DOMAIN${NC}"
+echo "Containers: wbs-app (php-fpm), wbs-nginx, wbs-db, wbs-redis, wbs-queue"
+echo "Logs      : docker logs -f wbs-app"
+echo -e "            ${SUDO:+$SUDO }tail -f /var/log/apache2/${DOMAIN}-error.log"
 echo ""
-echo "Container information:"
-echo "  - PHP App:   wbs-app"
-echo "  - Nginx:     wbs-nginx (port 8001 on host)"
-echo "  - Database:  wbs-db"
-echo "  - Redis:     wbs-redis"
-echo "  - Queue:     wbs-queue"
-echo ""
-echo "Docker network: $DOCKER_NETWORK"
-echo "Proxy domain:   $DOMAIN"
+echo "Tambah aplikasi lain: ulangi pola ini di repo app tsb. dengan"
+echo "APP_PORT & DOMAIN berbeda (mis. devapps-lain.bontangkota.go.id -> 8004)."
 echo ""

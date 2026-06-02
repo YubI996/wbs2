@@ -5,7 +5,7 @@ echo "========================================"
 echo "WBS v2 - Starting Application"
 echo "========================================"
 
-cd /var/www/html
+cd /var/www
 
 # Wait for database
 echo "Waiting for database..."

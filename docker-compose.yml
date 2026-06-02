@@ -1,4 +1,10 @@
-version: '3.8'
+# ==============================================================
+# WBS v2 - Docker Compose
+# Pola server: container HTTP (wbs-nginx) hanya bind ke 127.0.0.1
+# (loopback VM). Apache di host bertindak sebagai reverse proxy
+# per-subdomain dan meneruskan ke 127.0.0.1:${APP_PORT}.
+# Lihat installer.sh untuk pembuatan VirtualHost-nya.
+# ==============================================================
 
 services:
   # PHP-FPM Application
@@ -28,8 +34,10 @@ services:
     image: nginx:alpine
     container_name: wbs-nginx
     restart: unless-stopped
+    # Bind ke loopback VM saja — hanya Apache (reverse proxy host) yang bisa akses.
+    # APP_PORT diambil dari .env; WAJIB unik antar aplikasi (mis. sipadu=8001, wbs=8003).
     ports:
-      - "8001:80"
+      - "127.0.0.1:${APP_PORT:-8003}:80"
     volumes:
       - ./:/var/www
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/:ro

@@ -239,9 +239,17 @@ class BuatLaporanWizard extends Component
             Cache::forget('landing_stats');
             Cache::forget('admin_stats');
             
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            session()->flash('error', 'Terjadi kesalahan: ' . $e->getMessage());
+
+            \Illuminate\Support\Facades\Log::error('Gagal menyimpan laporan WBS', [
+                'message' => $e->getMessage(),
+                'exception' => get_class($e),
+                'where' => $e->getFile() . ':' . $e->getLine(),
+            ]);
+
+            // Tampilkan ke pengguna (Livewire error bag) supaya kegagalan tidak "diam".
+            $this->addError('submit', 'Gagal mengirim laporan: ' . $e->getMessage());
         }
     }
     

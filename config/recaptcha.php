@@ -33,6 +33,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Minimum Score (reCAPTCHA v3)
+    |--------------------------------------------------------------------------
+    |
+    | reCAPTCHA v3 returns a score between 0.0 and 1.0. Requests scoring below
+    | this threshold are rejected. Lowering it reduces false rejections of
+    | legitimate users on shared/NAT/VPN networks, at the cost of letting
+    | slightly more suspicious traffic through. Tunable via env without a deploy.
+    |
+    */
+    'min_score' => (float) env('RECAPTCHA_MIN_SCORE', 0.3),
+
+    /*
+    |--------------------------------------------------------------------------
     | Enable reCAPTCHA
     |--------------------------------------------------------------------------
     |

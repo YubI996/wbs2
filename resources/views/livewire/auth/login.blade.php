@@ -32,7 +32,19 @@
                 <p class="text-gray-500 text-sm mt-1">Masuk ke dashboard pengelola</p>
             </div>
 
-            <form wire:submit="login" class="space-y-6">
+            <form x-data @submit.prevent="
+@if($recaptchaEnabled && $recaptchaSiteKey)
+                if (typeof grecaptcha === 'undefined') { $wire.login(); return; }
+                grecaptcha.ready(function () {
+                    grecaptcha.execute('{{ $recaptchaSiteKey }}', { action: 'login' }).then(function (token) {
+                        $wire.set('recaptchaToken', token, false);
+                        $wire.login();
+                    });
+                });
+@else
+                $wire.login();
+@endif
+            " class="space-y-6">
                 <!-- Email -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -108,66 +120,8 @@
     </div>
 
     @if($recaptchaEnabled && $recaptchaSiteKey)
-    <!-- reCAPTCHA v3 Script -->
+    <!-- reCAPTCHA v3 — token diambil segar saat submit (lihat @submit pada <form>) -->
     <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
-    <script>
-        function executeRecaptcha() {
-            grecaptcha.ready(function() {
-                grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'login'}).then(function(token) {
-                    @this.set('recaptchaToken', token);
-                });
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            executeRecaptcha();
-
-            // Refresh token every 90 seconds (tokens expire after 2 minutes)
-            setInterval(executeRecaptcha, 90000);
-        });
-
-        // Listen for refresh event from Livewire
-        document.addEventListener('livewire:init', function() {
-            Livewire.on('refresh-recaptcha', function() {
-                executeRecaptcha();
-            });
-        });
-    </script>
     @endif
 
-    @push('scripts')
-    <script>
-        // Prevent form submission until Livewire is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            const loginForm = document.querySelector('form[wire\\:submit="login"]');
-
-            if (loginForm) {
-                let livewireReady = false;
-
-                document.addEventListener('livewire:init', function() {
-                    livewireReady = true;
-                    console.log('[Login] Form ready for submission');
-                });
-
-                loginForm.addEventListener('submit', function(e) {
-                    if (!livewireReady) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.warn('[Login] Submission blocked - Livewire not ready');
-
-                        setTimeout(() => {
-                            if (livewireReady) {
-                                loginForm.requestSubmit();
-                            }
-                        }, 100);
-
-                        return false;
-                    }
-
-                    console.log('[Login] Submitting...');
-                });
-            }
-        });
-    </script>
-    @endpush
 </div>

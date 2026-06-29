@@ -150,7 +150,20 @@
             
             <!-- Form Card -->
             <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <form wire:submit.prevent="{{ $step === $totalSteps ? 'submit' : 'nextStep' }}">
+                <form x-data @submit.prevent="
+                    if ($wire.step < {{ $totalSteps }}) { $wire.nextStep(); return; }
+@if($recaptchaEnabled && $recaptchaSiteKey)
+                    if (typeof grecaptcha === 'undefined') { $wire.submit(); return; }
+                    grecaptcha.ready(function () {
+                        grecaptcha.execute('{{ $recaptchaSiteKey }}', { action: 'submit_report' }).then(function (token) {
+                            $wire.set('recaptchaToken', token, false);
+                            $wire.submit();
+                        });
+                    });
+@else
+                    $wire.submit();
+@endif
+                ">
                     <!-- Step 1: Identitas -->
                     @if($step === 1)
                         <div class="p-6 border-b border-gray-100">
@@ -484,30 +497,7 @@
     </main>
 
     @if($recaptchaEnabled && $recaptchaSiteKey)
-    <!-- reCAPTCHA v3 Script -->
+    <!-- reCAPTCHA v3 — token diambil segar saat submit (lihat @submit pada <form>) -->
     <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
-    <script>
-        function executeRecaptcha() {
-            grecaptcha.ready(function() {
-                grecaptcha.execute('{{ $recaptchaSiteKey }}', {action: 'submit_report'}).then(function(token) {
-                    @this.set('recaptchaToken', token);
-                });
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            executeRecaptcha();
-
-            // Refresh token every 90 seconds (tokens expire after 2 minutes)
-            setInterval(executeRecaptcha, 90000);
-        });
-
-        // Listen for refresh event from Livewire
-        document.addEventListener('livewire:init', function() {
-            Livewire.on('refresh-recaptcha', function() {
-                executeRecaptcha();
-            });
-        });
-    </script>
     @endif
 </div>

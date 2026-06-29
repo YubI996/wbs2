@@ -9,11 +9,12 @@ class RecaptchaService
 {
     protected string $secretKey;
     protected string $verifyUrl = 'https://www.google.com/recaptcha/api/siteverify';
-    protected float $minScore = 0.5;
+    protected float $minScore = 0.3;
 
     public function __construct()
     {
         $this->secretKey = config('recaptcha.secret_key', '');
+        $this->minScore = (float) config('recaptcha.min_score', 0.3);
     }
 
     /**

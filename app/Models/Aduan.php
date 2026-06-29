@@ -120,9 +120,14 @@ class Aduan extends Model
     public function generateNomorRegistrasi(): void
     {
         $year = date('Y');
-        $lastSequence = static::whereYear('created_at', $year)
+        // withTrashed(): nomor_registrasi punya unique index yang TETAP menghitung
+        // baris soft-deleted. Tanpa ini, sequence dihitung hanya dari baris aktif
+        // sehingga setelah sebuah laporan dihapus, nomor yang sama dibuat ulang dan
+        // melanggar unique constraint (1062 Duplicate entry).
+        $lastSequence = static::withTrashed()
+            ->whereYear('created_at', $year)
             ->max('sequence') ?? 0;
-        
+
         $this->sequence = $lastSequence + 1;
         $this->nomor_registrasi = sprintf('WBS-%s-%05d', $year, $this->sequence);
     }
